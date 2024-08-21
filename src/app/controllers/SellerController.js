@@ -1,11 +1,32 @@
 const { sql, poolPromise } = require('../../config/db/index');
-
 const jwt = require('jsonwebtoken');
-
+const slugify = require('slugify');
+const { v4: uuidv4 } = require('uuid');
 const SECRET_KEY = process.env.JWT_SECRET_KEY;
 class SellerController {
     // [POST] /seller/add_product
     async add_product(req, res) {
+        async function generateUniqueSlug(baseSlug) {
+            const pool = await poolPromise;
+            let uniqueSlug = baseSlug;
+            const uniqueId = uuidv4();
+
+            const result = await pool
+                .request()
+                .input('Slug', sql.NVarChar, uniqueSlug)
+                .query('SELECT COUNT(*) AS Count FROM Products WHERE Slug = @Slug');
+
+            if (result.recordset[0].Count === 0) {
+                // Slug chưa tồn tại
+                return uniqueSlug;
+            }
+
+            // Slug đã tồn tại, tạo slug mới với số định danh
+            else {
+                uniqueSlug = `${baseSlug}-${uniqueId}`;
+                return uniqueSlug;
+            }
+        }
         try {
             // Lấy token từ header của yêu cầu
             const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
@@ -19,6 +40,10 @@ class SellerController {
             const { productName, productDescription, productPrice, productStock, productPriceRange, productSKU } =
                 req.body;
 
+            // Tạo slug từ tên sản phẩm
+            const baseSlug = slugify(productName, { strict: true });
+            const slug = await generateUniqueSlug(baseSlug);
+            console.log(baseSlug);
             const pool = await poolPromise;
             const transaction = pool.transaction();
 
@@ -30,12 +55,13 @@ class SellerController {
                 .input('UserId', sql.Int, userId)
                 .input('BackGround', sql.NVarChar, productBackGroundImage[0]?.filename || null)
                 .input('Name', sql.NVarChar, productName)
+                .input('Slug', sql.NVarChar, slug)
                 .input('Description', sql.NVarChar, productDescription)
                 .input('Price', sql.Float, productPrice)
                 .input('Stock', sql.Int, productStock)
                 .input('SKU', sql.NVarChar, productSKU)
                 .query(
-                    'INSERT INTO Products (UserId,BackGround, Name, Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@UserId, @BackGround, @Name, @Description, @Price, @Stock, @SKU)',
+                    'INSERT INTO Products (UserId,BackGround, Name, Slug,Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@UserId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU)',
                 );
 
             const productId = productResult.recordset[0].Id;
