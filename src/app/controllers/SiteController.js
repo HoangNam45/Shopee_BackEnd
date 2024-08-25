@@ -11,12 +11,25 @@ class SiteController {
 
         try {
             const pool = await poolPromise;
+            const transaction = pool.transaction();
+            await transaction.begin();
+
             const hashedPassword = await bcrypt.hash(password, 10);
-            await pool
+            // Insert into Users table
+            const userResult = await transaction
                 .request()
                 .input('account', sql.VarChar, account)
                 .input('password', sql.VarChar, hashedPassword)
-                .query('INSERT INTO Users (Account, Password) VALUES (@account, @password)');
+                .query('INSERT INTO Users (Account, Password) OUTPUT INSERTED.Id VALUES (@account, @password)');
+            const userId = userResult.recordset[0].Id;
+            // Insert into Sellers table
+            await transaction
+                .request()
+                .input('Name', sql.VarChar, account)
+                .input('UserId', sql.Int, userId)
+                .query('INSERT INTO Sellers (Name, UserId) VALUES (@Name, @UserId)');
+
+            await transaction.commit();
             res.status(201).send('User registered successfully');
         } catch (err) {
             console.error('Error registering user', err);

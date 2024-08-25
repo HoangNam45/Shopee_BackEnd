@@ -19,6 +19,7 @@ app.use(cors(corsOptions));
 route(app);
 // Cấu hình để phục vụ tệp tĩnh từ thư mục "uploads"
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+app.use('/assets', express.static(path.join(__dirname, '/assets')));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
 });
