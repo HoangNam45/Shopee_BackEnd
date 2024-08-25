@@ -32,7 +32,28 @@ class SellerController {
         try {
             // Lấy token từ header của yêu cầu
             const token = req.headers.authorization.split(' ')[1]; // 'Bearer
-            console.log(token);
+            const decoded = jwt.verify(token, SECRET_KEY);
+            const userId = decoded.id;
+
+            const { shopName } = req.body;
+            const avatar = req.file.filename;
+
+            console.log('avatar', avatar);
+            console.log('name', shopName);
+
+            const pool = await poolPromise;
+            const request = pool.request();
+            request.input('UserId', sql.Int, userId);
+            request.input('Name', sql.NVarChar, shopName);
+            request.input('Avatar', sql.NVarChar, avatar);
+
+            request.query(`
+            UPDATE Sellers
+            SET 
+                Name = COALESCE(@Name, Name), 
+                Avatar = COALESCE(@Avatar, Avatar)
+            WHERE UserId = @UserId
+        `);
         } catch (error) {
             console.error('Error updating seller information', error);
             res.status(500).json({ message: 'Server error' });
