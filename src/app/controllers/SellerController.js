@@ -36,10 +36,13 @@ class SellerController {
             const userId = decoded.id;
 
             const { shopName } = req.body;
-            const avatar = req.file.filename;
 
-            console.log('avatar', avatar);
-            console.log('name', shopName);
+            let avatar = '';
+            if (req.file) {
+                avatar = req.file.filename;
+            } else {
+                avatar = req.body.shopAvt;
+            }
 
             const pool = await poolPromise;
             const request = pool.request();
@@ -47,13 +50,18 @@ class SellerController {
             request.input('Name', sql.NVarChar, shopName);
             request.input('Avatar', sql.NVarChar, avatar);
 
-            request.query(`
-            UPDATE Sellers
-            SET 
-                Name = COALESCE(@Name, Name), 
-                Avatar = COALESCE(@Avatar, Avatar)
-            WHERE UserId = @UserId
-        `);
+            const result = await request.query(`
+                UPDATE Sellers
+                SET 
+                    Name = COALESCE(@Name, Name), 
+                    Avatar = COALESCE(@Avatar, Avatar)
+                OUTPUT inserted.Name, inserted.Avatar
+                WHERE UserId = @UserId
+            `);
+
+            const sellerNewInfo = result.recordset[0];
+            console.log(sellerNewInfo);
+            res.status(200).json(sellerNewInfo);
         } catch (error) {
             console.error('Error updating seller information', error);
             res.status(500).json({ message: 'Server error' });
