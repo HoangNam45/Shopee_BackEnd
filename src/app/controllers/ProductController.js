@@ -49,10 +49,16 @@ class ProductController {
 
             await transaction.begin();
 
+            const sellerResult = await transaction
+                .request()
+                .input('UserId', sql.Int, userId)
+                .query('SELECT Id FROM Sellers WHERE UserId = @UserId');
+            const sellerId = sellerResult.recordset[0].Id;
+
             // Lưu sản phẩm vào bảng Products
             const productResult = await transaction
                 .request()
-                .input('UserId', sql.Int, userId)
+                .input('SellerId', sql.Int, sellerId)
                 .input('BackGround', sql.NVarChar, productBackGroundImage[0]?.filename || null)
                 .input('Name', sql.NVarChar, productName)
                 .input('Slug', sql.NVarChar, slug)
@@ -61,7 +67,7 @@ class ProductController {
                 .input('Stock', sql.Int, productStock)
                 .input('SKU', sql.NVarChar, productSKU)
                 .query(
-                    'INSERT INTO Products (UserId,BackGround, Name, Slug,Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@UserId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU)',
+                    'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU)',
                 );
 
             const productId = productResult.recordset[0].Id;
