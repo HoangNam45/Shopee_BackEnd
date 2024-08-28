@@ -122,12 +122,18 @@ class ProductController {
         const { slug } = req.params;
         try {
             const pool = await poolPromise;
-            const result = await pool.request().input('Slug', sql.NVarChar, slug).query(`SELECT 
+            const transaction = pool.transaction();
+
+            await transaction.begin();
+
+            const productInfo = await transaction.request().input('Slug', sql.NVarChar, slug).query(`SELECT 
             Products.Name, 
             Products.Description, 
             Products.Price, 
-            Products.Stock, 
+            Products.Stock,
+            Products.SellerId, 
             ProductImages.ImageUrl
+            
         FROM 
             Products
         INNER JOIN 
@@ -135,13 +141,29 @@ class ProductController {
         WHERE 
             Products.Slug = @Slug`);
             const product = {
-                Name: result.recordset[0].Name,
-                Description: result.recordset[0].Description,
-                Price: result.recordset[0].Price,
-                Stock: result.recordset[0].Stock,
-                Images: result.recordset.map((record) => record.ImageUrl),
+                Name: productInfo.recordset[0].Name,
+                Description: productInfo.recordset[0].Description,
+                Price: productInfo.recordset[0].Price,
+                Stock: productInfo.recordset[0].Stock,
+                Images: productInfo.recordset.map((record) => record.ImageUrl),
+                SellerId: productInfo.recordset[0].SellerId,
             };
-            res.status(200).json(product);
+            const sellerInfo = await transaction
+                .request()
+                .input('SellerId', sql.Int, product.SellerId)
+                .query('SELECT Name, Avatar FROM Sellers WHERE Id = @SellerId');
+            const seller = {
+                SellerName: sellerInfo.recordset[0].Name,
+                SellerAvatar: sellerInfo.recordset[0].Avatar,
+            };
+
+            await transaction.commit();
+            const data = {
+                ...product,
+                ...seller,
+            };
+            console.log(data);
+            res.status(200).json(data);
         } catch (error) {
             console.error('Error fetching products', error);
             res.status(500).json({ message: 'Server error' });
