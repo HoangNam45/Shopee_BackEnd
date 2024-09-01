@@ -1,38 +1,17 @@
 const { sql, poolPromise } = require('../../config/db/index');
-const jwt = require('jsonwebtoken');
+const { decodeToken } = require('../../services/authService');
+const { createProductUniqueSlug, createNewProduct } = require('../../services/productService');
+const { getSellerByUserId } = require('../../services/sellerService');
+
 const slugify = require('slugify');
-const { v4: uuidv4 } = require('uuid');
-const SECRET_KEY = process.env.JWT_SECRET_KEY;
+
 class ProductController {
     //[Post] /products/add_product
     async addProduct(req, res) {
-        async function generateUniqueSlug(baseSlug) {
-            const pool = await poolPromise;
-            let uniqueSlug = baseSlug;
-            const uniqueId = uuidv4();
-
-            const result = await pool
-                .request()
-                .input('Slug', sql.NVarChar, uniqueSlug)
-                .query('SELECT COUNT(*) AS Count FROM Products WHERE Slug = @Slug');
-
-            if (result.recordset[0].Count === 0) {
-                // Slug chưa tồn tại
-                return uniqueSlug;
-            }
-
-            // Slug đã tồn tại, tạo slug mới với số định danh
-            else {
-                uniqueSlug = `${baseSlug}-${uniqueId}`;
-                return uniqueSlug;
-            }
-        }
         try {
             // Lấy token từ header của yêu cầu
             const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
-            // console.log(token);
-            // Giải mã token để lấy userId
-            const decoded = jwt.verify(token, SECRET_KEY);
+            const decoded = decodeToken(token);
             const userId = decoded.id;
 
             const productImages = req.files['productImages'] || [];
@@ -42,35 +21,29 @@ class ProductController {
 
             // Tạo slug từ tên sản phẩm
             const baseSlug = slugify(productName, { strict: true });
-            const slug = await generateUniqueSlug(baseSlug);
+            const slug = await createProductUniqueSlug(baseSlug);
 
             const pool = await poolPromise;
             const transaction = pool.transaction();
-
             await transaction.begin();
 
-            const sellerResult = await transaction
-                .request()
-                .input('UserId', sql.Int, userId)
-                .query('SELECT Id FROM Sellers WHERE UserId = @UserId');
-            const sellerId = sellerResult.recordset[0].Id;
+            const sellerData = await getSellerByUserId(userId, transaction);
+            const sellerId = sellerData.Id;
 
             // Lưu sản phẩm vào bảng Products
-            const productResult = await transaction
-                .request()
-                .input('SellerId', sql.Int, sellerId)
-                .input('BackGround', sql.NVarChar, productBackGroundImage[0]?.filename || null)
-                .input('Name', sql.NVarChar, productName)
-                .input('Slug', sql.NVarChar, slug)
-                .input('Description', sql.NVarChar, productDescription)
-                .input('Price', sql.Float, productPrice)
-                .input('Stock', sql.Int, productStock)
-                .input('SKU', sql.NVarChar, productSKU)
-                .query(
-                    'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU)',
-                );
+            const productData = await createNewProduct({
+                sellerId,
+                slug,
+                productName,
+                productDescription,
+                productPrice,
+                productStock,
+                productPriceRange,
+                productSKU,
+                productBackGroundImage,
+            });
 
-            const productId = productResult.recordset[0].Id;
+            const productId = productData.Id;
 
             // Lưu từng hình ảnh vào bảng ProductImages
             for (const image of productImages) {
