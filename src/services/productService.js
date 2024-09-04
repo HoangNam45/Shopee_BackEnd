@@ -51,12 +51,60 @@ const createNewProduct = async ({
 };
 
 const insertProductImages = async ({ productId, image, transaction }) => {
-    for (const image of productImages) {
-        await transaction
-            .request()
-            .input('ProductId', sql.Int, productId)
-            .input('ImageUrl', sql.NVarChar, image.filename)
-            .query('INSERT INTO ProductImages (ProductId, ImageUrl) VALUES (@ProductId, @ImageUrl)');
+    const request = transaction ? transaction.request() : (await poolPromise).request();
+    request
+        .input('ProductId', sql.Int, productId)
+        .input('ImageUrl', sql.NVarChar, image.filename)
+        .query('INSERT INTO ProductImages (ProductId, ImageUrl) VALUES (@ProductId, @ImageUrl)');
+};
+
+const insertProductPriceRanges = async ({ productId, priceRange, transaction = null }) => {
+    const request = transaction ? transaction.request() : (await poolPromise).request();
+    request
+        .input('ProductId', sql.Int, productId)
+        .input('StartRange', sql.Int, priceRange.from)
+        .input('EndRange', sql.Int, priceRange.to)
+        .input('SpecificPrice', sql.Float, priceRange.price)
+        .query(
+            'INSERT INTO ProductPriceRanges (ProductId, StartRange, EndRange, SpecificPrice) VALUES (@ProductId, @StartRange, @EndRange, @SpecificPrice)',
+        );
+};
+
+const getLatestProducts = async () => {
+    const pool = await poolPromise;
+    const request = pool.request();
+    const result = await request.query('SELECT * FROM Products ORDER BY CreatedAt DESC');
+    return result.recordset;
+};
+
+const getProductDetail = async ({ slug, transaction = null }) => {
+    const request = transaction ? transaction.request() : (await poolPromise).request();
+    try {
+        const result = await request.input('Slug', sql.NVarChar, slug).query(`SELECT 
+        Products.Name, 
+        Products.Description, 
+        Products.Price, 
+        Products.Stock,
+        Products.SellerId, 
+        ProductImages.ImageUrl
+        
+    FROM 
+        Products
+    INNER JOIN 
+        dbo.ProductImages ON Products.Id = ProductImages.ProductId
+    WHERE 
+        Products.Slug = @Slug`);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching product detail', error);
+        throw new Error('Error fetching product detail');
     }
 };
-module.exports = { createProductUniqueSlug, createNewProduct, insertProductImages };
+module.exports = {
+    createProductUniqueSlug,
+    createNewProduct,
+    insertProductImages,
+    insertProductPriceRanges,
+    getLatestProducts,
+    getProductDetail,
+};

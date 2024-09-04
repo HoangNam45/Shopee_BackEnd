@@ -19,6 +19,15 @@ const getSellerByUserId = async ({ userId, transaction = null }) => {
     return result.recordset[0];
 };
 
+const getSellerById = async (sellerId, transaction = null) => {
+    const request = transaction ? transaction.request() : (await poolPromise).request();
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query('SELECT * FROM Sellers WHERE Id = @SellerId');
+    return result.recordset[0];
+};
+
 const updateSellerInfo = async ({ userId, shopName, avatar }) => {
     const pool = await poolPromise;
     const request = pool.request();
@@ -36,4 +45,4 @@ const updateSellerInfo = async ({ userId, shopName, avatar }) => {
             `);
     return result.recordset[0];
 };
-module.exports = { createSeller, getSellerByUserId, updateSellerInfo };
+module.exports = { createSeller, getSellerByUserId, updateSellerInfo, getSellerById };

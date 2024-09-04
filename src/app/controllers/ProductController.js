@@ -1,7 +1,14 @@
 const { sql, poolPromise } = require('../../config/db/index');
 const { decodeToken } = require('../../services/authService');
-const { createProductUniqueSlug, createNewProduct } = require('../../services/productService');
-const { getSellerByUserId } = require('../../services/sellerService');
+const {
+    createProductUniqueSlug,
+    createNewProduct,
+    insertProductImages,
+    insertProductPriceRanges,
+    getLatestProducts,
+    getProductDetail,
+} = require('../../services/productService');
+const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
 
 const slugify = require('slugify');
 
@@ -47,25 +54,13 @@ class ProductController {
 
             // Lưu từng hình ảnh vào bảng ProductImages
             for (const image of productImages) {
-                await transaction
-                    .request()
-                    .input('ProductId', sql.Int, productId)
-                    .input('ImageUrl', sql.NVarChar, image.filename)
-                    .query('INSERT INTO ProductImages (ProductId, ImageUrl) VALUES (@ProductId, @ImageUrl)');
+                insertProductImages({ productId, image, transaction });
             }
+
             // Lưu từng mức giá vào bảng ProductPriceRanges
             const priceRanges = JSON.parse(productPriceRange);
-            // console.log(priceRanges);
             for (const priceRange of priceRanges) {
-                await transaction
-                    .request()
-                    .input('ProductId', sql.Int, productId)
-                    .input('StartRange', sql.Int, priceRange.from)
-                    .input('EndRange', sql.Int, priceRange.to)
-                    .input('SpecificPrice', sql.Float, priceRange.price)
-                    .query(
-                        'INSERT INTO ProductPriceRanges (ProductId, StartRange, EndRange, SpecificPrice) VALUES (@ProductId, @StartRange, @EndRange, @SpecificPrice)',
-                    );
+                insertProductPriceRanges({ productId, priceRange, transaction });
             }
 
             await transaction.commit();
@@ -80,10 +75,8 @@ class ProductController {
     // [GET] /products
     async getProducts(req, res) {
         try {
-            const pool = await poolPromise;
-            const result = await pool.request().query('SELECT * FROM Products ORDER BY CreatedAt DESC'); // Sắp xếp sản phẩm theo CreatedAt từ mới đến cũ
-
-            res.status(200).json(result.recordset);
+            const productData = await getLatestProducts();
+            res.status(200).json(productData);
         } catch (error) {
             console.error('Error fetching products', error);
             res.status(500).json({ message: 'Server error' });
@@ -96,49 +89,36 @@ class ProductController {
         try {
             const pool = await poolPromise;
             const transaction = pool.transaction();
-
             await transaction.begin();
 
-            const productInfo = await transaction.request().input('Slug', sql.NVarChar, slug).query(`SELECT 
-            Products.Name, 
-            Products.Description, 
-            Products.Price, 
-            Products.Stock,
-            Products.SellerId, 
-            ProductImages.ImageUrl
-            
-        FROM 
-            Products
-        INNER JOIN 
-            dbo.ProductImages ON Products.Id = ProductImages.ProductId
-        WHERE 
-            Products.Slug = @Slug`);
-            const product = {
-                Name: productInfo.recordset[0].Name,
-                Description: productInfo.recordset[0].Description,
-                Price: productInfo.recordset[0].Price,
-                Stock: productInfo.recordset[0].Stock,
-                Images: productInfo.recordset.map((record) => record.ImageUrl),
-                SellerId: productInfo.recordset[0].SellerId,
+            const product = await getProductDetail({ slug, transaction });
+
+            const productData = {
+                Name: product[0].Name,
+                Description: product[0].Description,
+                Price: product[0].Price,
+                Stock: product[0].Stock,
+                Images: product.map((record) => record.ImageUrl),
+                SellerId: product[0].SellerId,
             };
-            const sellerInfo = await transaction
-                .request()
-                .input('SellerId', sql.Int, product.SellerId)
-                .query('SELECT Name, Avatar FROM Sellers WHERE Id = @SellerId');
-            const seller = {
-                SellerName: sellerInfo.recordset[0].Name,
-                SellerAvatar: sellerInfo.recordset[0].Avatar,
+
+            const seller = await getSellerById(productData.SellerId, transaction);
+
+            const sellerData = {
+                SellerName: seller.Name,
+                SellerAvatar: seller.Avatar,
             };
 
             await transaction.commit();
             const data = {
-                ...product,
-                ...seller,
+                ...productData,
+                ...sellerData,
             };
-            console.log(data);
+
             res.status(200).json(data);
         } catch (error) {
             console.error('Error fetching products', error);
+
             res.status(500).json({ message: 'Server error' });
         }
     }
