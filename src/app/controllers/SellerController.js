@@ -28,7 +28,7 @@ class SellerController {
             const { shopName } = req.body;
             // Xử lý token
             const token = req.headers.authorization.split(' ')[1]; // 'Bearer
-            const decoded = await decodeToken(token);
+            const decoded = decodeToken(token);
             const userId = decoded.id;
 
             let avatar = '';

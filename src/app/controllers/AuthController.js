@@ -1,15 +1,24 @@
 const { createUser, getUserByAccount } = require('../../services/userService');
 const { createToken, validatePassword } = require('../../services/authService');
+const { createSeller } = require('../../services/sellerService');
+const { poolPromise } = require('../../config/db/index');
 
 class AuthController {
     // [POST] /auth/register
     async register(req, res) {
+        let transaction;
         try {
             const { account, password } = req.body;
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
 
-            await createUser(account, password);
+            const userId = await createUser({ account, password, transaction });
+            await createSeller({ name: account, userId, transaction });
+            await transaction.commit();
             res.status(201).send('User created');
         } catch (error) {
+            await transaction.rollback();
             console.error('Error registering user', error);
             res.status(500).send('Error registering user');
         }

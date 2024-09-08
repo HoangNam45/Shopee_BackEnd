@@ -1,8 +1,8 @@
 const { poolPromise, sql } = require('../config/db/index');
 
-const createSeller = async ({ name, userId, transaction }) => {
+const createSeller = async ({ name, userId, transaction = null }) => {
     try {
-        const request = transaction.request();
+        const request = transaction ? transaction.request() : (await poolPromise).request();
         await request
             .input('Name', sql.VarChar, name)
             .input('UserId', sql.Int, userId)

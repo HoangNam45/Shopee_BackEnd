@@ -1,4 +1,4 @@
-const { sql, poolPromise } = require('../../config/db/index');
+const { poolPromise } = require('../../config/db/index');
 const { decodeToken } = require('../../services/authService');
 const {
     createProductUniqueSlug,
@@ -15,6 +15,7 @@ const slugify = require('slugify');
 class ProductController {
     //[Post] /products/add_product
     async addProduct(req, res) {
+        let transaction;
         try {
             // Lấy token từ header của yêu cầu
             const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
@@ -23,20 +24,28 @@ class ProductController {
 
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
-            const { productName, productDescription, productPrice, productStock, productPriceRange, productSKU } =
-                req.body;
+            const {
+                productName,
+                productDescription,
+                productPrice,
+                productStock,
+                productPriceRange,
+                productSKU,
+                productStatus,
+            } = req.body;
 
             // Tạo slug từ tên sản phẩm
-            const baseSlug = slugify(productName, { strict: true });
-            const slug = await createProductUniqueSlug(baseSlug);
+            const baseSlug = await slugify(productName, { strict: true });
 
             const pool = await poolPromise;
-            const transaction = pool.transaction();
+            transaction = pool.transaction();
             await transaction.begin();
 
-            const sellerData = await getSellerByUserId(userId, transaction);
-            const sellerId = sellerData.Id;
+            const slug = await createProductUniqueSlug({ baseSlug, transaction });
+            const sellerData = await getSellerByUserId({ userId, transaction });
 
+            const sellerId = sellerData.Id;
+            console.log(productStatus);
             // Lưu sản phẩm vào bảng Products
             const productData = await createNewProduct({
                 sellerId,
@@ -48,25 +57,28 @@ class ProductController {
                 productPriceRange,
                 productSKU,
                 productBackGroundImage,
+                productStatus,
+                transaction,
             });
 
             const productId = productData.Id;
 
             // Lưu từng hình ảnh vào bảng ProductImages
             for (const image of productImages) {
-                insertProductImages({ productId, image, transaction });
+                await insertProductImages({ productId, image, transaction });
             }
 
             // Lưu từng mức giá vào bảng ProductPriceRanges
             const priceRanges = JSON.parse(productPriceRange);
             for (const priceRange of priceRanges) {
-                insertProductPriceRanges({ productId, priceRange, transaction });
+                await insertProductPriceRanges({ productId, priceRange, transaction });
             }
 
             await transaction.commit();
 
             res.status(200).json({ message: 'Product added successfully' });
         } catch (error) {
+            transaction.rollback();
             console.error(error);
             res.status(500).json({ message: 'Server error' });
         }
@@ -86,9 +98,10 @@ class ProductController {
     // [GET] /products/:slug
     async getProductDetail(req, res) {
         const { slug } = req.params;
+        let transaction;
         try {
             const pool = await poolPromise;
-            const transaction = pool.transaction();
+            transaction = pool.transaction();
             await transaction.begin();
 
             const product = await getProductDetail({ slug, transaction });
@@ -117,6 +130,7 @@ class ProductController {
 
             res.status(200).json(data);
         } catch (error) {
+            await transaction.rollback();
             console.error('Error fetching products', error);
 
             res.status(500).json({ message: 'Server error' });

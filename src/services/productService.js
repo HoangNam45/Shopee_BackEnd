@@ -1,13 +1,12 @@
 const { sql, poolPromise } = require('../config/db/index');
 const { v4: uuidv4 } = require('uuid');
 
-const createProductUniqueSlug = async (baseSlug) => {
-    const pool = await poolPromise;
+const createProductUniqueSlug = async ({ baseSlug, transaction }) => {
+    const request = transaction ? transaction.request() : (await poolPromise).request();
     let uniqueSlug = baseSlug;
     const uniqueId = uuidv4();
 
-    const result = await pool
-        .request()
+    const result = await request
         .input('Slug', sql.NVarChar, uniqueSlug)
         .query('SELECT COUNT(*) AS Count FROM Products WHERE Slug = @Slug');
 
@@ -32,6 +31,7 @@ const createNewProduct = async ({
     productStock,
     productSKU,
     productBackGroundImage,
+    productStatus,
     transaction = null,
 }) => {
     const request = transaction ? transaction.request() : (await poolPromise).request();
@@ -44,23 +44,25 @@ const createNewProduct = async ({
         .input('Price', sql.Float, productPrice)
         .input('Stock', sql.Int, productStock)
         .input('SKU', sql.NVarChar, productSKU)
+        .input('Status', sql.NVarChar, productStatus)
         .query(
-            'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, SKU) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU)',
+            'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, SKU, Status) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU, @Status)',
         );
     return result.recordset[0];
 };
 
-const insertProductImages = async ({ productId, image, transaction }) => {
+const insertProductImages = async ({ productId, image, transaction = null }) => {
     const request = transaction ? transaction.request() : (await poolPromise).request();
-    request
+    await request
         .input('ProductId', sql.Int, productId)
         .input('ImageUrl', sql.NVarChar, image.filename)
         .query('INSERT INTO ProductImages (ProductId, ImageUrl) VALUES (@ProductId, @ImageUrl)');
+    return;
 };
 
 const insertProductPriceRanges = async ({ productId, priceRange, transaction = null }) => {
     const request = transaction ? transaction.request() : (await poolPromise).request();
-    request
+    await request
         .input('ProductId', sql.Int, productId)
         .input('StartRange', sql.Int, priceRange.from)
         .input('EndRange', sql.Int, priceRange.to)
@@ -68,6 +70,7 @@ const insertProductPriceRanges = async ({ productId, priceRange, transaction = n
         .query(
             'INSERT INTO ProductPriceRanges (ProductId, StartRange, EndRange, SpecificPrice) VALUES (@ProductId, @StartRange, @EndRange, @SpecificPrice)',
         );
+    return;
 };
 
 const getLatestProducts = async () => {
