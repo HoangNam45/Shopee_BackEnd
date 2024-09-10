@@ -103,6 +103,15 @@ const getProductDetail = async ({ slug, transaction = null }) => {
         throw new Error('Error fetching product detail');
     }
 };
+
+const getSellerLatestProduct = async ({ sellerId, transaction }) => {
+    const request = transaction ? transaction.request() : (await poolPromise).request();
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query('SELECT * FROM Products WHERE SellerId = @SellerId');
+    return result.recordset;
+};
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -110,4 +119,5 @@ module.exports = {
     insertProductPriceRanges,
     getLatestProducts,
     getProductDetail,
+    getSellerLatestProduct,
 };

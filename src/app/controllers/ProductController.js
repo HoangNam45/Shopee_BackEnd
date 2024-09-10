@@ -7,6 +7,7 @@ const {
     insertProductPriceRanges,
     getLatestProducts,
     getProductDetail,
+    getSellerLatestProduct,
 } = require('../../services/productService');
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
 
@@ -136,6 +137,45 @@ class ProductController {
             res.status(500).json({ message: 'Server error' });
         }
     }
+
+    //[GET] /products/seller/latest_products
+    async getSellerLatestProduct(req, res) {
+        let transaction;
+
+        const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
+
+        console.log(token);
+        const decoded = decodeToken(token);
+        const userId = decoded.id;
+
+        console.log(userId);
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+            console.log(sellerId);
+            const product = await getSellerLatestProduct({ sellerId, transaction });
+
+            console.log(product);
+
+            await transaction.commit();
+
+            res.status(200).json(product);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller latest products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[GET] /products/seller/active_products
+    async getProductDetail(req, res) {}
+
+    //[GET] /products/seller/hidden_products
+    async getProductDetail(req, res) {}
 }
 
 module.exports = new ProductController();

@@ -45,4 +45,5 @@ const updateSellerInfo = async ({ userId, shopName, avatar }) => {
             `);
     return result.recordset[0];
 };
+
 module.exports = { createSeller, getSellerByUserId, updateSellerInfo, getSellerById };

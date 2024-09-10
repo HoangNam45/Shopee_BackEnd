@@ -11,6 +11,7 @@ router.post(
     ]),
     productController.addProduct,
 );
+router.post('/seller/latest_products', productController.getSellerLatestProduct);
 router.get('/:slug', productController.getProductDetail);
 router.get('/', productController.getProducts);
 
