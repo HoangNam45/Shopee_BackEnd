@@ -30,7 +30,6 @@ class AuthController {
 
         try {
             const user = await getUserByAccount(account);
-            console.log('user', user);
 
             const isPasswordValid = await validatePassword(password, user.Password);
 

@@ -1,8 +1,9 @@
 const { sql, poolPromise } = require('../config/db/index');
 const bcrypt = require('bcrypt');
+const { getRequest } = require('../utils/dbHelper');
 
 const createUser = async ({ account, password, transaction = null }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);

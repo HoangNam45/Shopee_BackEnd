@@ -1,8 +1,9 @@
 const { sql, poolPromise } = require('../config/db/index');
 const { v4: uuidv4 } = require('uuid');
+const { getRequest } = require('../utils/dbHelper');
 
 const createProductUniqueSlug = async ({ baseSlug, transaction }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     let uniqueSlug = baseSlug;
     const uniqueId = uuidv4();
 
@@ -34,7 +35,7 @@ const createNewProduct = async ({
     productStatus,
     transaction = null,
 }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     const result = await request
         .input('SellerId', sql.Int, sellerId)
         .input('BackGround', sql.NVarChar, productBackGroundImage[0]?.filename || null)
@@ -52,7 +53,7 @@ const createNewProduct = async ({
 };
 
 const insertProductImages = async ({ productId, image, transaction = null }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     await request
         .input('ProductId', sql.Int, productId)
         .input('ImageUrl', sql.NVarChar, image.filename)
@@ -61,7 +62,7 @@ const insertProductImages = async ({ productId, image, transaction = null }) => 
 };
 
 const insertProductPriceRanges = async ({ productId, priceRange, transaction = null }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     await request
         .input('ProductId', sql.Int, productId)
         .input('StartRange', sql.Int, priceRange.from)
@@ -81,7 +82,7 @@ const getLatestProducts = async () => {
 };
 
 const getProductDetail = async ({ slug, transaction = null }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     try {
         const result = await request.input('Slug', sql.NVarChar, slug).query(`SELECT 
         Products.Name, 
@@ -104,13 +105,73 @@ const getProductDetail = async ({ slug, transaction = null }) => {
     }
 };
 
-const getSellerLatestProduct = async ({ sellerId, transaction }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+const getSellerLatestProduct = async ({ sellerId, offset, limit, transaction }) => {
+    const request = await getRequest(transaction);
 
     const result = await request
         .input('SellerId', sql.Int, sellerId)
-        .query('SELECT * FROM Products WHERE SellerId = @SellerId');
+        .input('Offset', sql.Int, offset)
+        .input('Limit', sql.Int, limit)
+
+        .query(
+            'Select * From Products WHERE SellerId = @SellerId ORDER BY CreatedAt DESC OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY',
+        );
     return result.recordset;
+};
+
+const getSellerActiveProduct = async ({ sellerId, offset, limit, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .input('Offset', sql.Int, offset)
+        .input('Limit', sql.Int, limit)
+
+        .query(
+            "Select * From Products WHERE SellerId = @SellerId AND Status='active' ORDER BY CreatedAt DESC OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY",
+        );
+    return result.recordset;
+};
+
+const getSellerHiddenProduct = async ({ sellerId, offset, limit, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .input('Offset', sql.Int, offset)
+        .input('Limit', sql.Int, limit)
+
+        .query(
+            "Select * From Products WHERE SellerId = @SellerId AND Status='hidden' ORDER BY CreatedAt DESC OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY",
+        );
+    return result.recordset;
+};
+
+const getSellerTotalProducts = async ({ sellerId, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query('SELECT COUNT(*) AS TotalProducts FROM Products WHERE SellerId = @SellerId');
+    return result.recordset[0].TotalProducts;
+};
+
+const getSellerTotalActiveProducts = async ({ sellerId, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query("SELECT COUNT(*) AS totalActiveProducts FROM Products WHERE SellerId = @SellerId AND Status = 'active'");
+    return result.recordset[0].totalActiveProducts;
+};
+
+const getSellerTotalHiddenProducts = async ({ sellerId, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query("SELECT COUNT(*) AS totalHiddenProducts FROM Products WHERE SellerId = @SellerId AND Status = 'hidden'");
+    return result.recordset[0].totalHiddenProducts;
 };
 module.exports = {
     createProductUniqueSlug,
@@ -120,4 +181,9 @@ module.exports = {
     getLatestProducts,
     getProductDetail,
     getSellerLatestProduct,
+    getSellerTotalProducts,
+    getSellerTotalActiveProducts,
+    getSellerActiveProduct,
+    getSellerTotalHiddenProducts,
+    getSellerHiddenProduct,
 };

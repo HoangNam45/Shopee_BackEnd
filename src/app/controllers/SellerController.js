@@ -4,10 +4,8 @@ class SellerController {
     // [GET] /seller/information
     async getSellerInfo(req, res) {
         try {
-            // Xử lý token
-            const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
-            const decoded = await decodeToken(token);
-            const userId = decoded.id;
+            const user = req.user;
+            const userId = user.id;
 
             const sellerData = await getSellerByUserId({ userId });
             console.log(sellerData);
@@ -25,11 +23,10 @@ class SellerController {
     // [PUT] /seller/updateInformation
     async updateSellerInfo(req, res) {
         try {
+            const user = req.user;
+            const userId = user.id;
+
             const { shopName } = req.body;
-            // Xử lý token
-            const token = req.headers.authorization.split(' ')[1]; // 'Bearer
-            const decoded = decodeToken(token);
-            const userId = decoded.id;
 
             let avatar = '';
             if (req.file) {

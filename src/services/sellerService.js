@@ -1,8 +1,9 @@
 const { poolPromise, sql } = require('../config/db/index');
+const { getRequest } = require('../utils/dbHelper');
 
 const createSeller = async ({ name, userId, transaction = null }) => {
     try {
-        const request = transaction ? transaction.request() : (await poolPromise).request();
+        const request = await getRequest(transaction);
         await request
             .input('Name', sql.VarChar, name)
             .input('UserId', sql.Int, userId)
@@ -14,13 +15,13 @@ const createSeller = async ({ name, userId, transaction = null }) => {
 };
 
 const getSellerByUserId = async ({ userId, transaction = null }) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
     const result = await request.input('UserId', sql.Int, userId).query('SELECT * FROM Sellers Where UserId = @UserId');
     return result.recordset[0];
 };
 
 const getSellerById = async (sellerId, transaction = null) => {
-    const request = transaction ? transaction.request() : (await poolPromise).request();
+    const request = await getRequest(transaction);
 
     const result = await request
         .input('SellerId', sql.Int, sellerId)

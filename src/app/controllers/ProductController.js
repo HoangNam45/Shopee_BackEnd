@@ -1,5 +1,4 @@
 const { poolPromise } = require('../../config/db/index');
-const { decodeToken } = require('../../services/authService');
 const {
     createProductUniqueSlug,
     createNewProduct,
@@ -8,7 +7,13 @@ const {
     getLatestProducts,
     getProductDetail,
     getSellerLatestProduct,
+    getSellerActiveProduct,
+    getSellerTotalProducts,
+    getSellerTotalActiveProducts,
+    getSellerTotalHiddenProducts,
+    getSellerHiddenProduct,
 } = require('../../services/productService');
+
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
 
 const slugify = require('slugify');
@@ -18,10 +23,8 @@ class ProductController {
     async addProduct(req, res) {
         let transaction;
         try {
-            // Lấy token từ header của yêu cầu
-            const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
-            const decoded = decodeToken(token);
-            const userId = decoded.id;
+            const user = req.user;
+            const userId = user.id;
 
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
@@ -142,13 +145,17 @@ class ProductController {
     async getSellerLatestProduct(req, res) {
         let transaction;
 
-        const token = req.headers.authorization.split(' ')[1]; // 'Bearer <token>'
+        const { page, limit } = req.query;
+        const offset = (page - 1) * limit;
 
-        console.log(token);
-        const decoded = decodeToken(token);
-        const userId = decoded.id;
+        const user = req.user;
+        // console.log(user);
+        // const token = req.headers.authorization.split(' ')[1];
+        // console.log(token);
 
-        console.log(userId);
+        // const user = decodeToken(token);
+        const userId = user.id;
+
         try {
             const pool = await poolPromise;
             transaction = pool.transaction();
@@ -156,10 +163,8 @@ class ProductController {
 
             const sellerData = await getSellerByUserId({ userId, transaction });
             const sellerId = sellerData.Id;
-            console.log(sellerId);
-            const product = await getSellerLatestProduct({ sellerId, transaction });
 
-            console.log(product);
+            const product = await getSellerLatestProduct({ sellerId, offset, limit, transaction });
 
             await transaction.commit();
 
@@ -172,10 +177,138 @@ class ProductController {
     }
 
     //[GET] /products/seller/active_products
-    async getProductDetail(req, res) {}
+    async getSellerActiveProduct(req, res) {
+        let transaction;
+
+        const { page, limit } = req.query;
+        const offset = (page - 1) * limit;
+
+        const user = req.user;
+        const userId = user.id;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+
+            const product = await getSellerActiveProduct({ sellerId, offset, limit, transaction });
+
+            await transaction.commit();
+
+            res.status(200).json(product);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller active products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 
     //[GET] /products/seller/hidden_products
-    async getProductDetail(req, res) {}
+    async getSellerHiddenProduct(req, res) {
+        let transaction;
+
+        const { page, limit } = req.query;
+        const offset = (page - 1) * limit;
+
+        const user = req.user;
+        const userId = user.id;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+
+            const product = await getSellerHiddenProduct({ sellerId, offset, limit, transaction });
+
+            await transaction.commit();
+
+            res.status(200).json(product);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller hidden products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[GET] /products/seller/total_products
+    async getSellerTotalProduct(req, res) {
+        let transaction;
+
+        const user = req.user;
+        const userId = user.id;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+            const totalProducts = await getSellerTotalProducts({ sellerId, transaction });
+
+            await transaction.commit();
+            res.status(200).json({ totalProducts });
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller total products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[GET] /products/seller/total_active_products
+    async getSellerTotalActiveProduct(req, res) {
+        let transaction;
+
+        const user = req.user;
+        const userId = user.id;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+            const totalActiveProducts = await getSellerTotalActiveProducts({ sellerId, transaction });
+
+            await transaction.commit();
+            res.status(200).json({ totalActiveProducts });
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller total products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+    //[GET] /products/seller/total_hidden_products
+    async getSellerTotalHiddenProduct(req, res) {
+        let transaction;
+
+        const user = req.user;
+        const userId = user.id;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+            const totalHiddenProducts = await getSellerTotalHiddenProducts({ sellerId, transaction });
+
+            await transaction.commit();
+            res.status(200).json({ totalHiddenProducts });
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller total products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 }
 
 module.exports = new ProductController();
