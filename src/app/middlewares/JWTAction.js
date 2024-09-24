@@ -1,7 +1,7 @@
 const { decodeToken } = require('../../services/authService');
 const { match } = require('path-to-regexp');
 
-const checkUserToken = (req, res, next) => {
+const checkUserToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     // Sử dụng regex để khớp đường dẫn động
@@ -9,7 +9,7 @@ const checkUserToken = (req, res, next) => {
         '/auth/login',
         '/auth/register',
         '/products',
-        '/products/:slug',
+        '/products/detail/:slug',
         '/uploads/images/productBackGroundImage/:slug',
         '/uploads/images/productImages/:slug',
         '/uploads/images/sellerAvatar/:slug',
@@ -21,7 +21,7 @@ const checkUserToken = (req, res, next) => {
         return next();
     }
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith('Bearer')) {
         return res.status(401).json({ error: 'Token not found' });
     }
 

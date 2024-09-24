@@ -12,6 +12,7 @@ const {
     getSellerTotalActiveProducts,
     getSellerTotalHiddenProducts,
     getSellerHiddenProduct,
+    getSellerDetailProduct,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -22,6 +23,7 @@ class ProductController {
     //[Post] /products/add_product
     async addProduct(req, res) {
         let transaction;
+
         try {
             const user = req.user;
             const userId = user.id;
@@ -49,7 +51,7 @@ class ProductController {
             const sellerData = await getSellerByUserId({ userId, transaction });
 
             const sellerId = sellerData.Id;
-            console.log(productStatus);
+
             // Lưu sản phẩm vào bảng Products
             const productData = await createNewProduct({
                 sellerId,
@@ -306,6 +308,33 @@ class ProductController {
         } catch (error) {
             await transaction.rollback();
             console.error('Error fetching seller total products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[GET] /products/seller/detail/product
+    async getSellerDetailProduct(req, res) {
+        let transaction;
+
+        const user = req.user;
+        const userId = user.id;
+        const { productId } = req.params;
+
+        try {
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const sellerData = await getSellerByUserId({ userId, transaction });
+            const sellerId = sellerData.Id;
+
+            const product = await getSellerDetailProduct({ sellerId, productId, transaction });
+
+            await transaction.commit();
+            res.status(200).json(product);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error fetching seller detail products', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

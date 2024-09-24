@@ -173,6 +173,18 @@ const getSellerTotalHiddenProducts = async ({ sellerId, transaction }) => {
         .query("SELECT COUNT(*) AS totalHiddenProducts FROM Products WHERE SellerId = @SellerId AND Status = 'hidden'");
     return result.recordset[0].totalHiddenProducts;
 };
+
+const getSellerDetailProduct = async ({ sellerId, productId, transaction }) => {
+    const request = await getRequest(transaction);
+
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .input('ProductId', sql.Int, productId)
+
+        .query('SELECT * FROM dbo.Products Where SellerId = @SellerId AND Id=@ProductId');
+
+    return result.recordset[0];
+};
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -186,4 +198,5 @@ module.exports = {
     getSellerActiveProduct,
     getSellerTotalHiddenProducts,
     getSellerHiddenProduct,
+    getSellerDetailProduct,
 };
