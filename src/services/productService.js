@@ -177,13 +177,19 @@ const getSellerTotalHiddenProducts = async ({ sellerId, transaction }) => {
 const getSellerDetailProduct = async ({ sellerId, productId, transaction }) => {
     const request = await getRequest(transaction);
 
-    const result = await request
-        .input('SellerId', sql.Int, sellerId)
-        .input('ProductId', sql.Int, productId)
+    const result = await request.input('SellerId', sql.Int, sellerId).input('ProductId', sql.Int, productId).query(`
+    SELECT 
+        p.*, 
+        i.ImageUrl
+    FROM 
+        Products p
+    INNER JOIN 
+        ProductImages i ON p.Id = i.ProductId
+    WHERE 
+        p.Id = @ProductId
+`);
 
-        .query('SELECT * FROM dbo.Products Where SellerId = @SellerId AND Id=@ProductId');
-
-    return result.recordset[0];
+    return result.recordset;
 };
 module.exports = {
     createProductUniqueSlug,

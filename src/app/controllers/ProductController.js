@@ -330,8 +330,14 @@ class ProductController {
 
             const product = await getSellerDetailProduct({ sellerId, productId, transaction });
 
+            const productData = {
+                ...product[0],
+                ImageUrl: product.map((record) => record.ImageUrl),
+            };
+
+            console.log(productData);
             await transaction.commit();
-            res.status(200).json(product);
+            res.status(200).json(productData);
         } catch (error) {
             await transaction.rollback();
             console.error('Error fetching seller detail products', error);
