@@ -30,6 +30,9 @@ class ProductController {
 
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
+
+            console.log(productImages);
+
             const {
                 productName,
                 productDescription,
@@ -39,7 +42,6 @@ class ProductController {
                 productSKU,
                 productStatus,
             } = req.body;
-
             // Tạo slug từ tên sản phẩm
             const baseSlug = await slugify(productName, { strict: true });
 
@@ -88,6 +90,26 @@ class ProductController {
             console.error(error);
             res.status(500).json({ message: 'Server error' });
         }
+    }
+
+    //[Put] /products/update_product/:productId
+    async updateProduct(req, res) {
+        const user = req.user;
+        const userId = user.id;
+
+        const productImages = req.files['productImages'] || [];
+        const productBackGroundImage = req.files['productBackGroundImage'] || [];
+        const {
+            productName,
+            productDescription,
+            productPrice,
+            productStock,
+            productPriceRange,
+            productSKU,
+            productStatus,
+            productExistingBackGroundImage,
+            productExistingImages,
+        } = req.body;
     }
 
     // [GET] /products

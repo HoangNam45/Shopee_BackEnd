@@ -14,6 +14,17 @@ router.post(
     productController.addProduct,
 );
 
+router.put(
+    '/update_product/:productId',
+
+    upload.fields([
+        { name: 'productImages', maxCount: 9 }, // Tối đa 10 hình ảnh
+        { name: 'productBackGroundImage', maxCount: 1 }, // Tối đa 1 hình nền
+    ]),
+
+    productController.updateProduct,
+);
+
 router.get('/seller/latest_products', productController.getSellerLatestProduct);
 router.get('/seller/active_products', productController.getSellerActiveProduct);
 router.get('/seller/hidden_products', productController.getSellerHiddenProduct);
