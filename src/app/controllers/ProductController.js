@@ -2,6 +2,7 @@ const { poolPromise } = require('../../config/db/index');
 const {
     createProductUniqueSlug,
     createNewProduct,
+    updateProduct,
     insertProductImages,
     insertProductPriceRanges,
     getLatestProducts,
@@ -13,6 +14,7 @@ const {
     getSellerTotalHiddenProducts,
     getSellerHiddenProduct,
     getSellerDetailProduct,
+    deleteProductImagesById,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -72,7 +74,8 @@ class ProductController {
             const productId = productData.Id;
 
             // Lưu từng hình ảnh vào bảng ProductImages
-            for (const image of productImages) {
+            const newProductImages = productImages.map((file) => file.filename);
+            for (const image of newProductImages) {
                 await insertProductImages({ productId, image, transaction });
             }
 
@@ -94,22 +97,82 @@ class ProductController {
 
     //[Put] /products/update_product/:productId
     async updateProduct(req, res) {
-        const user = req.user;
-        const userId = user.id;
+        let transaction;
 
-        const productImages = req.files['productImages'] || [];
-        const productBackGroundImage = req.files['productBackGroundImage'] || [];
-        const {
-            productName,
-            productDescription,
-            productPrice,
-            productStock,
-            productPriceRange,
-            productSKU,
-            productStatus,
-            productExistingBackGroundImage,
-            productExistingImages,
-        } = req.body;
+        try {
+            const user = req.user;
+            const userId = user.id;
+
+            const productId = req.params.productId;
+
+            const productImages = req.files['productImages'] || [];
+            const productBackGroundImage = req.files['productBackGroundImage'] || [];
+            console.log(productImages);
+            const {
+                productName,
+                productDescription,
+                productPrice,
+                productStock,
+                productSKU,
+                productStatus,
+                productExistingBackGroundImage,
+                productExistingImages,
+            } = req.body;
+            console.log(productExistingImages);
+            const baseSlug = await slugify(productName, { strict: true });
+
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+            await transaction.begin();
+
+            const slug = await createProductUniqueSlug({ baseSlug, transaction });
+            const sellerData = await getSellerByUserId({ userId, transaction });
+
+            const sellerId = sellerData.Id;
+
+            // Update product
+            let updatedProductBackGroundImage;
+            if (productExistingBackGroundImage) {
+                updatedProductBackGroundImage = productExistingBackGroundImage;
+            } else {
+                updatedProductBackGroundImage = productBackGroundImage[0].filename;
+            }
+            const updatedProductData = await updateProduct({
+                sellerId,
+                productId,
+                slug,
+                productName,
+                productDescription,
+                productPrice,
+                productStock,
+                productSKU,
+                updatedProductBackGroundImage,
+                productStatus,
+                transaction,
+            });
+
+            // To update product images table, delete all existing images and insert new images!!!!!!!
+            let updatedProdudctImages;
+            if (productImages.length > 0) {
+                const uploadedImageFilenames = productImages.map((file) => file.filename);
+                updatedProdudctImages = [...uploadedImageFilenames, productExistingImages || []];
+            } else {
+                updatedProdudctImages = productExistingImages;
+            }
+            console.log(updatedProdudctImages);
+            await deleteProductImagesById({ productId, transaction });
+
+            for (const image of updatedProdudctImages) {
+                await insertProductImages({ productId, image, transaction });
+            }
+            await transaction.commit();
+
+            res.status(200).json({ message: 'Product added successfully' });
+        } catch (error) {
+            transaction.rollback();
+            console.error(error);
+            res.status(500).json({ message: 'Server error' });
+        }
     }
 
     // [GET] /products

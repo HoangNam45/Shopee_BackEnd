@@ -52,11 +52,42 @@ const createNewProduct = async ({
     return result.recordset[0];
 };
 
+const updateProduct = async ({
+    sellerId,
+    productId,
+    slug,
+    productName,
+    productDescription,
+    productPrice,
+    productStock,
+    productSKU,
+    updatedProductBackGroundImage,
+    productStatus,
+    transaction = null,
+}) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .input('ProductId', sql.Int, productId)
+        .input('BackGround', sql.NVarChar, updatedProductBackGroundImage)
+        .input('Name', sql.NVarChar, productName)
+        .input('Slug', sql.NVarChar, slug)
+        .input('Description', sql.NVarChar, productDescription)
+        .input('Price', sql.Float, productPrice)
+        .input('Stock', sql.Int, productStock)
+        .input('SKU', sql.NVarChar, productSKU)
+        .input('Status', sql.NVarChar, productStatus)
+        .query(
+            'UPDATE Products SET Name = @Name, Description = @Description, Price = @Price, Stock = @Stock, SKU = @SKU, BackGround = @BackGround WHERE Id = @ProductId',
+        );
+    return;
+};
+
 const insertProductImages = async ({ productId, image, transaction = null }) => {
     const request = await getRequest(transaction);
     await request
         .input('ProductId', sql.Int, productId)
-        .input('ImageUrl', sql.NVarChar, image.filename)
+        .input('ImageUrl', sql.NVarChar, image)
         .query('INSERT INTO ProductImages (ProductId, ImageUrl) VALUES (@ProductId, @ImageUrl)');
     return;
 };
@@ -191,9 +222,18 @@ const getSellerDetailProduct = async ({ sellerId, productId, transaction }) => {
 
     return result.recordset;
 };
+
+const deleteProductImagesById = async ({ productId, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .query('DELETE FROM ProductImages WHERE ProductId = @ProductId');
+    return;
+};
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
+    updateProduct,
     insertProductImages,
     insertProductPriceRanges,
     getLatestProducts,
@@ -205,4 +245,5 @@ module.exports = {
     getSellerTotalHiddenProducts,
     getSellerHiddenProduct,
     getSellerDetailProduct,
+    deleteProductImagesById,
 };
