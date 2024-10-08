@@ -83,7 +83,7 @@ const updateProduct = async ({
     return;
 };
 
-const insertProductImages = async ({ productId, image, transaction = null }) => {
+const insertProductImages = async (productId, image, transaction = null) => {
     const request = await getRequest(transaction);
     await request
         .input('ProductId', sql.Int, productId)

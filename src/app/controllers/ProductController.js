@@ -76,7 +76,7 @@ class ProductController {
             // Lưu từng hình ảnh vào bảng ProductImages
             const newProductImages = productImages.map((file) => file.filename);
             for (const image of newProductImages) {
-                await insertProductImages({ productId, image, transaction });
+                await insertProductImages(productId, image, transaction);
             }
 
             // Lưu từng mức giá vào bảng ProductPriceRanges
@@ -118,7 +118,6 @@ class ProductController {
                 productExistingBackGroundImage,
                 productExistingImages,
             } = req.body;
-            console.log(productExistingImages);
             const baseSlug = await slugify(productName, { strict: true });
 
             const pool = await poolPromise;
@@ -153,17 +152,23 @@ class ProductController {
 
             // To update product images table, delete all existing images and insert new images!!!!!!!
             let updatedProdudctImages;
+            const existingImagesArray = Array.isArray(productExistingImages)
+                ? productExistingImages
+                : productExistingImages
+                ? [productExistingImages]
+                : [];
             if (productImages.length > 0) {
                 const uploadedImageFilenames = productImages.map((file) => file.filename);
-                updatedProdudctImages = [...uploadedImageFilenames, productExistingImages || []];
+                updatedProdudctImages = [...existingImagesArray, ...uploadedImageFilenames];
             } else {
-                updatedProdudctImages = productExistingImages;
+                updatedProdudctImages = existingImagesArray;
             }
+            console.log(productExistingImages);
             console.log(updatedProdudctImages);
             await deleteProductImagesById({ productId, transaction });
 
             for (const image of updatedProdudctImages) {
-                await insertProductImages({ productId, image, transaction });
+                await insertProductImages(productId, image, transaction);
             }
             await transaction.commit();
 
