@@ -25,6 +25,9 @@ router.put(
     productController.updateProduct,
 );
 
+router.put('/update_product_status/:productId', productController.updateProductStatus);
+router.delete('/delete_product/:productId', productController.deleteProduct);
+
 router.get('/seller/latest_products', productController.getSellerLatestProduct);
 router.get('/seller/active_products', productController.getSellerActiveProduct);
 router.get('/seller/hidden_products', productController.getSellerHiddenProduct);
@@ -35,6 +38,7 @@ router.get('/seller/total_hidden_products', productController.getSellerTotalHidd
 
 router.get('/seller/detail_product/:productId', productController.getSellerDetailProduct);
 
+router.get('/search', productController.getProductsBySearch);
 router.get('/detail/:slug', productController.getProductDetail);
 router.get('/', productController.getProducts);
 

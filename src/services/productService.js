@@ -76,10 +76,18 @@ const updateProduct = async ({
         .input('Price', sql.Float, productPrice)
         .input('Stock', sql.Int, productStock)
         .input('SKU', sql.NVarChar, productSKU)
-        .input('Status', sql.NVarChar, productStatus)
         .query(
             'UPDATE Products SET Name = @Name, Description = @Description, Price = @Price, Stock = @Stock, SKU = @SKU, BackGround = @BackGround WHERE Id = @ProductId',
         );
+    return;
+};
+
+const updateProductStatus = async ({ productId, productStatus, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .input('Status', sql.NVarChar, productStatus)
+        .query('UPDATE Products SET Status = @Status WHERE Id = @ProductId');
     return;
 };
 
@@ -205,6 +213,14 @@ const getSellerTotalHiddenProducts = async ({ sellerId, transaction }) => {
     return result.recordset[0].totalHiddenProducts;
 };
 
+const deleteProductById = async (productId, transaction) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .query('DELETE FROM Products WHERE Id = @ProductId');
+    return;
+};
+
 const getSellerDetailProduct = async ({ sellerId, productId, transaction }) => {
     const request = await getRequest(transaction);
 
@@ -230,6 +246,14 @@ const deleteProductImagesById = async ({ productId, transaction }) => {
         .query('DELETE FROM ProductImages WHERE ProductId = @ProductId');
     return;
 };
+
+const getProductsBySearch = async ({ query, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('query', sql.NVarChar, query)
+        .query(`SELECT * FROM Products WHERE Name LIKE '%@Search%'`);
+    return result.recordset;
+};
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -246,4 +270,7 @@ module.exports = {
     getSellerHiddenProduct,
     getSellerDetailProduct,
     deleteProductImagesById,
+    updateProductStatus,
+    deleteProductById,
+    getProductsBySearch,
 };

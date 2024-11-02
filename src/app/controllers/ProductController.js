@@ -15,6 +15,9 @@ const {
     getSellerHiddenProduct,
     getSellerDetailProduct,
     deleteProductImagesById,
+    updateProductStatus,
+    deleteProductById,
+    getProductsBySearch,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -114,7 +117,6 @@ class ProductController {
                 productPrice,
                 productStock,
                 productSKU,
-                productStatus,
                 productExistingBackGroundImage,
                 productExistingImages,
             } = req.body;
@@ -146,7 +148,6 @@ class ProductController {
                 productStock,
                 productSKU,
                 updatedProductBackGroundImage,
-                productStatus,
                 transaction,
             });
 
@@ -175,6 +176,29 @@ class ProductController {
             res.status(200).json({ message: 'Product added successfully' });
         } catch (error) {
             transaction.rollback();
+            console.error(error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+    //[PUT] /products/update_product_status/:productId
+    async updateProductStatus(req, res) {
+        try {
+            const { productStatus } = req.body;
+            const { productId } = req.params;
+            await updateProductStatus({ productId, productStatus });
+            res.status(200).json({ message: 'Product status updated successfully' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+    //[DELETE] /products/delete_product/:productId
+    async deleteProduct(req, res) {
+        try {
+            const { productId } = req.params;
+            await deleteProductById(productId);
+            res.status(200).json({ message: 'Product deleted successfully' });
+        } catch (error) {
             console.error(error);
             res.status(500).json({ message: 'Server error' });
         }
@@ -431,6 +455,18 @@ class ProductController {
         } catch (error) {
             await transaction.rollback();
             console.error('Error fetching seller detail products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[GET] /products/search
+    async getProductsBySearch(req, res) {
+        try {
+            const { query } = req.query;
+            const productData = await getProductsBySearch(query);
+            res.status(200).json(productData);
+        } catch (error) {
+            console.error('Error fetching products', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
