@@ -463,7 +463,9 @@ class ProductController {
     async getProductsBySearch(req, res) {
         try {
             const { query } = req.query;
-            const productData = await getProductsBySearch(query);
+            console.log(query);
+            const productData = await getProductsBySearch({ query });
+            console.log(productData);
             res.status(200).json(productData);
         } catch (error) {
             console.error('Error fetching products', error);

@@ -250,8 +250,8 @@ const deleteProductImagesById = async ({ productId, transaction }) => {
 const getProductsBySearch = async ({ query, transaction }) => {
     const request = await getRequest(transaction);
     const result = await request
-        .input('query', sql.NVarChar, query)
-        .query(`SELECT * FROM Products WHERE Name LIKE '%@Search%'`);
+        .input('query', sql.NVarChar, `%${query}%`)
+        .query(`SELECT * FROM Products WHERE Name LIKE @query`);
     return result.recordset;
 };
 module.exports = {

@@ -4,11 +4,11 @@ const { match } = require('path-to-regexp');
 const checkUserToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
-    // Sử dụng regex để khớp đường dẫn động
     const nonSecurePaths = [
         '/auth/login',
         '/auth/register',
         '/products',
+        '/products/search/:slug',
         '/products/detail/:slug',
         '/uploads/images/productBackGroundImage/:slug',
         '/uploads/images/productImages/:slug',
