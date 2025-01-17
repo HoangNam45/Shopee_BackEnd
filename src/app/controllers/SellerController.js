@@ -1,5 +1,5 @@
 const { decodeToken } = require('../../services/authService');
-const { getSellerByUserId, updateSellerInfo } = require('../../services/sellerService');
+const { getSellerByUserId, updateSellerInfo, createDiscount } = require('../../services/sellerService');
 class SellerController {
     // [GET] /seller/information
     async getSellerInfo(req, res) {

@@ -47,4 +47,17 @@ const updateSellerInfo = async ({ userId, shopName, avatar }) => {
     return result.recordset[0];
 };
 
-module.exports = { createSeller, getSellerByUserId, updateSellerInfo, getSellerById };
+const createDiscount = async ({ discountData }) => {
+    const request = await getRequest();
+    await request
+        .input('ProductId', sql.Int, discountData.productId)
+        .input('Discount', sql.Int, discountData.discountPercentage)
+        .input('StartDate', sql.DateTime, discountData.startDate)
+        .input('EndDate', sql.DateTime, discountData.endDate)
+        .query(
+            'INSERT INTO Discount (Product_id, Discount_percentage, Start_date, End_date) VALUES (@ProductId, @Discount, @StartDate, @EndDate)',
+        );
+    return;
+};
+
+module.exports = { createSeller, getSellerByUserId, updateSellerInfo, getSellerById, createDiscount };
