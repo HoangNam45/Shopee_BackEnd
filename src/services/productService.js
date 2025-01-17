@@ -254,6 +254,7 @@ const getProductsBySearch = async ({ query, transaction }) => {
         .query(`SELECT * FROM Products WHERE Name LIKE @query`);
     return result.recordset;
 };
+
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,

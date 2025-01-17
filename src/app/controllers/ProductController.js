@@ -18,6 +18,8 @@ const {
     updateProductStatus,
     deleteProductById,
     getProductsBySearch,
+    addDiscount,
+    addDiscountProduct,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');

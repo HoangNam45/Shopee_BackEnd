@@ -40,6 +40,7 @@ router.get('/seller/detail_product/:productId', productController.getSellerDetai
 
 router.get('/search', productController.getProductsBySearch);
 router.get('/detail/:slug', productController.getProductDetail);
+
 router.get('/', productController.getProducts);
 
 module.exports = router;
