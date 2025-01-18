@@ -1,9 +1,9 @@
 const { sql, poolPromise } = require('../config/db/index');
+const { get } = require('../routes/discount');
 const { getRequest } = require('../utils/dbHelper');
 
 const createDiscount = async ({ discountData, sellerId }) => {
     const request = await getRequest();
-    console.log(sellerId);
     await request
         .input('ProductId', sql.Int, discountData.productId)
         .input('Discount', sql.Int, discountData.discountPercentage)
@@ -14,7 +14,6 @@ const createDiscount = async ({ discountData, sellerId }) => {
             'INSERT INTO Discount (Product_id, Discount_percentage, Start_date, End_date, Seller_id) VALUES (@ProductId ,@Discount ,@StartDate, @EndDate, @SellerId)',
         );
 
-    console.log('Test');
     return;
 };
 
@@ -26,4 +25,21 @@ const getDiscounts = async ({ productId }) => {
     return result.recordset;
 };
 
-module.exports = { createDiscount, getDiscounts };
+const getSellerDiscounts = async ({ sellerId, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query('SELECT * FROM Discount WHERE Seller_id = @SellerId');
+    return result.recordset;
+};
+
+const getSellerDiscountedProducts = async ({ sellerId, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('SellerId', sql.Int, sellerId)
+        .query('SELECT * FROM Products p WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)');
+    console.log(result.recordset);
+    return result.recordset;
+};
+
+module.exports = { createDiscount, getDiscounts, getSellerDiscounts, getSellerDiscountedProducts };
