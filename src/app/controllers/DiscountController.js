@@ -5,10 +5,11 @@ class DiscountController {
     async createDiscount(req, res) {
         try {
             const user = req.user;
-            const userId = user.id;
+            const sellerId = user.seller_id;
             const discountData = req.body;
+            console.log('discountData', discountData);
 
-            await createDiscount({ discountData });
+            await createDiscount({ discountData, sellerId });
 
             res.status(200).json('Create discount successfully');
         } catch (error) {
