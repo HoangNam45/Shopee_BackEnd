@@ -6,4 +6,5 @@ router.post('/createDiscount', DiscountController.createDiscount);
 router.get('/getDiscounts/:productId', DiscountController.getDiscounts);
 router.get('/getSellerDiscounts', DiscountController.getSellerDiscounts);
 router.get('/getSellerDiscountedProducts', DiscountController.getSellerDiscountedProducts);
+router.delete('/deleteDiscount/:discountId', DiscountController.deleteDiscount);
 module.exports = router;

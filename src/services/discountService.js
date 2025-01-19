@@ -38,10 +38,18 @@ const getSellerDiscountedProducts = async ({ sellerId, transaction }) => {
     const result = await request
         .input('SellerId', sql.Int, sellerId)
         .query(
-            'SELECT  p.Id, p.BackGround, p.Name, p.Price, p.Stock, d.Discount_percentage, d.Start_date, d.End_date, d.Seller_id FROM Products p JOIN Discount d ON p.Id=d.Product_id WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)',
+            'SELECT  p.Id, p.BackGround, p.Name, p.Price, p.Stock, d.Discount_id ,d.Discount_percentage, d.Start_date, d.End_date, d.Seller_id FROM Products p JOIN Discount d ON p.Id=d.Product_id WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)',
         );
     console.log(result.recordset);
     return result.recordset;
 };
 
-module.exports = { createDiscount, getDiscounts, getSellerDiscounts, getSellerDiscountedProducts };
+const deleteDiscount = async ({ discountId, transaction }) => {
+    const request = await getRequest(transaction);
+    await request
+        .input('DiscountId', sql.Int, discountId)
+        .query('DELETE FROM Discount WHERE Discount_id = @DiscountId');
+    return;
+};
+
+module.exports = { createDiscount, getDiscounts, getSellerDiscounts, getSellerDiscountedProducts, deleteDiscount };

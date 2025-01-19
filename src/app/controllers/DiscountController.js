@@ -4,6 +4,7 @@ const {
     getDiscounts,
     getSellerDiscounts,
     getSellerDiscountedProducts,
+    deleteDiscount,
 } = require('../../services/discountService');
 
 class DiscountController {
@@ -57,6 +58,18 @@ class DiscountController {
             res.status(200).json(discountedProducts);
         } catch (error) {
             console.log('Error getting discounts', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[DELETE] /discount/deleteDiscount
+    async deleteDiscount(req, res) {
+        try {
+            const discountId = req.params.discountId;
+            await deleteDiscount({ discountId });
+            res.status(200).json('Delete discount successfully');
+        } catch (error) {
+            console.log('Error deleting discount', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
