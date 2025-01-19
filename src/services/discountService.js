@@ -37,7 +37,9 @@ const getSellerDiscountedProducts = async ({ sellerId, transaction }) => {
     const request = await getRequest(transaction);
     const result = await request
         .input('SellerId', sql.Int, sellerId)
-        .query('SELECT * FROM Products p WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)');
+        .query(
+            'SELECT  p.Id, p.BackGround, p.Name, p.Price, p.Stock, d.Discount_percentage, d.Start_date, d.End_date, d.Seller_id FROM Products p JOIN Discount d ON p.Id=d.Product_id WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)',
+        );
     console.log(result.recordset);
     return result.recordset;
 };
