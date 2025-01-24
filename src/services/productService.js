@@ -116,7 +116,34 @@ const insertProductPriceRanges = async ({ productId, priceRange, transaction = n
 const getLatestProducts = async () => {
     const pool = await poolPromise;
     const request = pool.request();
-    const result = await request.query('SELECT * FROM Products ORDER BY CreatedAt DESC');
+    const result = await request.query(`
+        SELECT 
+    Products.id AS ProductID,
+    Products.name AS ProductName,
+    Products.CreatedAt,
+    Products.Price AS ProductPrice,
+    Products.Slug,
+    Products.BackGround,
+    Discount.Discount_percentage,
+    CASE 
+        WHEN GETDATE() BETWEEN Discount.Start_date AND Discount.End_date THEN 'In Progress'
+        WHEN Discount.Start_date > GETDATE() THEN 'Upcoming'
+        ELSE 'No Discount'
+    END AS DiscountStatus
+FROM 
+    Products
+LEFT JOIN 
+    Discount
+ON 
+    Products.id = Discount.product_id
+WHERE 
+    (Discount.Discount_percentage IS NULL 
+     OR GETDATE() BETWEEN Discount.Start_date AND Discount.End_date
+     OR Discount.Start_date > GETDATE())
+    AND Products.Status = 'active'
+ORDER BY 
+    Products.CreatedAt DESC;
+    `);
     return result.recordset;
 };
 

@@ -14,10 +14,7 @@ class DiscountController {
             const user = req.user;
             const sellerId = user.seller_id;
             const discountData = req.body;
-            console.log('discountData', discountData);
-            console.log('sellerId', sellerId);
             await createDiscount({ discountData, sellerId });
-
             res.status(200).json('Create discount successfully');
         } catch (error) {
             res.status(500).json({ message: 'Server error' });

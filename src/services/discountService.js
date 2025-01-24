@@ -1,5 +1,4 @@
 const { sql, poolPromise } = require('../config/db/index');
-const { get } = require('../routes/discount');
 const { getRequest } = require('../utils/dbHelper');
 
 const createDiscount = async ({ discountData, sellerId }) => {
@@ -38,7 +37,7 @@ const getSellerDiscountedProducts = async ({ sellerId, transaction }) => {
     const result = await request
         .input('SellerId', sql.Int, sellerId)
         .query(
-            'SELECT  p.Id, p.BackGround, p.Name, p.Price, p.Stock, d.Discount_id ,d.Discount_percentage, d.Start_date, d.End_date, d.Seller_id FROM Products p JOIN Discount d ON p.Id=d.Product_id WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId)',
+            'SELECT  p.Id, p.BackGround, p.Name, p.Price, p.Stock, d.Discount_id ,d.Discount_percentage, d.Start_date, d.End_date, d.Seller_id FROM Products p JOIN Discount d ON p.Id=d.Product_id WHERE p.Id IN (SELECT Product_id FROM Discount WHERE Seller_id = @SellerId) ORDER BY d.Start_date, d.End_date DESC',
         );
     console.log(result.recordset);
     return result.recordset;
