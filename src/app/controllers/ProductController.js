@@ -231,10 +231,12 @@ class ProductController {
             const productData = {
                 Name: product[0].Name,
                 Description: product[0].Description,
-                Price: product[0].Price,
+                Price: product[0].Original_price,
                 Stock: product[0].Stock,
                 Images: product.map((record) => record.ImageUrl),
                 SellerId: product[0].SellerId,
+                Final_price: product[0].Final_price,
+                Discount: product[0].Discount_percentage,
             };
 
             const seller = await getSellerById(productData.SellerId, transaction);
