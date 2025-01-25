@@ -118,31 +118,31 @@ const getLatestProducts = async () => {
     const request = pool.request();
     const result = await request.query(`
         SELECT 
-    Products.id AS ProductID,
-    Products.name AS ProductName,
-    Products.CreatedAt,
-    Products.Price AS ProductPrice,
-    Products.Slug,
-    Products.BackGround,
-    Discount.Discount_percentage,
-    CASE 
-        WHEN GETDATE() BETWEEN Discount.Start_date AND Discount.End_date THEN 'In Progress'
-        WHEN Discount.Start_date > GETDATE() THEN 'Upcoming'
-        ELSE 'No Discount'
-    END AS DiscountStatus
-FROM 
-    Products
-LEFT JOIN 
-    Discount
-ON 
-    Products.id = Discount.product_id
-WHERE 
-    (Discount.Discount_percentage IS NULL 
-     OR GETDATE() BETWEEN Discount.Start_date AND Discount.End_date
-     OR Discount.Start_date > GETDATE())
-    AND Products.Status = 'active'
-ORDER BY 
-    Products.CreatedAt DESC;
+            p.Id,
+            p.Name,
+			p.BackGround,
+			p.Slug,
+            p.price AS Original_price,
+            COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+            CASE 
+                WHEN d.Discount_percentage IS NOT NULL THEN 
+                    p.price - (p.price * d.Discount_percentage / 100)
+                ELSE 
+                    p.price
+            END AS Final_price
+        FROM 
+            Products p
+        LEFT JOIN (
+            SELECT 
+                Product_id, 
+                Discount_percentage
+            FROM 
+                Discount
+            WHERE 
+                GETDATE() BETWEEN Start_date AND End_date
+        ) d
+        ON 
+            p.Id = d.Product_id;
     `);
     return result.recordset;
 };
@@ -151,19 +151,38 @@ const getProductDetail = async ({ slug, transaction = null }) => {
     const request = await getRequest(transaction);
     try {
         const result = await request.input('Slug', sql.NVarChar, slug).query(`SELECT 
-        Products.Name, 
-        Products.Description, 
-        Products.Price, 
-        Products.Stock,
-        Products.SellerId, 
-        ProductImages.ImageUrl
-        
+    p.Name, 
+    p.Description, 
+    p.Price AS Original_price, 
+    p.Stock,
+    p.SellerId, 
+    ProductImages.ImageUrl,
+    COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+    CASE 
+        WHEN d.Discount_percentage IS NOT NULL THEN 
+            p.price - (p.price * d.Discount_percentage / 100)
+        ELSE 
+            p.price
+    END AS Final_price
+FROM 
+    Products p
+LEFT JOIN 
+    dbo.ProductImages 
+ON 
+    p.Id = ProductImages.ProductId
+LEFT JOIN (
+    SELECT 
+        Product_id, 
+        Discount_percentage
     FROM 
-        Products
-    INNER JOIN 
-        dbo.ProductImages ON Products.Id = ProductImages.ProductId
+        Discount
     WHERE 
-        Products.Slug = @Slug`);
+        GETDATE() BETWEEN Start_date AND End_date
+) d
+ON 
+    p.Id = d.Product_id
+WHERE 
+    p.Slug = @Slug;`);
         return result.recordset;
     } catch (error) {
         console.error('Error fetching product detail', error);
@@ -276,9 +295,34 @@ const deleteProductImagesById = async ({ productId, transaction }) => {
 
 const getProductsBySearch = async ({ query, transaction }) => {
     const request = await getRequest(transaction);
-    const result = await request
-        .input('query', sql.NVarChar, `%${query}%`)
-        .query(`SELECT * FROM Products WHERE Name LIKE @query`);
+    const result = await request.input('query', sql.NVarChar, `%${query}%`).query(`SELECT 
+    p.Id,
+    p.Name,
+    p.BackGround,
+    p.Slug,
+    p.price AS Original_price,
+    COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+    CASE 
+        WHEN d.Discount_percentage IS NOT NULL THEN 
+            p.price - (p.price * d.Discount_percentage / 100)
+        ELSE 
+            p.price
+    END AS Final_price
+FROM 
+    Products p
+LEFT JOIN (
+    SELECT 
+        Product_id, 
+        Discount_percentage
+    FROM 
+        Discount
+    WHERE 
+        GETDATE() BETWEEN Start_date AND End_date
+) d
+ON 
+    p.Id = d.Product_id
+WHERE 
+    p.Name LIKE @query`);
     return result.recordset;
 };
 
