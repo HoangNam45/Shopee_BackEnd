@@ -151,6 +151,7 @@ const getProductDetail = async ({ slug, transaction = null }) => {
     const request = await getRequest(transaction);
     try {
         const result = await request.input('Slug', sql.NVarChar, slug).query(`SELECT 
+    p.Id,
     p.Name, 
     p.Description, 
     p.Price AS Original_price, 

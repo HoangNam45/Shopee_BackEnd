@@ -229,6 +229,7 @@ class ProductController {
             const product = await getProductDetail({ slug, transaction });
 
             const productData = {
+                ProductId: product[0].Id,
                 Name: product[0].Name,
                 Description: product[0].Description,
                 Price: product[0].Original_price,
