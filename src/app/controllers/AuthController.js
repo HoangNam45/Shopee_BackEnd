@@ -1,4 +1,4 @@
-const { createUser, getUserByAccount } = require('../../services/userService');
+const { createUser, getUserByAccount, createUserCart, getUserCart } = require('../../services/userService');
 const { createToken, validatePassword } = require('../../services/authService');
 const { createSeller, getSellerByUserId } = require('../../services/sellerService');
 const { poolPromise } = require('../../config/db/index');
@@ -15,6 +15,7 @@ class AuthController {
 
             const userId = await createUser({ account, password, transaction });
             await createSeller({ name: account, userId, transaction });
+            await createUserCart({ userId, transaction });
             await transaction.commit();
             res.status(201).send('User created');
         } catch (error) {
@@ -31,13 +32,14 @@ class AuthController {
         try {
             const user = await getUserByAccount(account);
             const seller = await getSellerByUserId({ userId: user.Id });
+            const cart = await getUserCart(user.Id);
             const isPasswordValid = await validatePassword(password, user.Password);
 
             if (!isPasswordValid) {
                 return res.status(400).send('Invalid password');
             }
 
-            const token = createToken(user, seller);
+            const token = createToken(user, seller, cart);
             res.send({ token });
         } catch (error) {
             console.error('Error logging in', error);

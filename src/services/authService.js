@@ -2,9 +2,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const SECRET_KEY = process.env.JWT_SECRET_KEY;
 
-const createToken = (user, seller) => {
+const createToken = (user, seller, cart) => {
     try {
-        const payload = { id: user.Id, seller_id: seller.Id };
+        console.log(user, seller, cart);
+        const payload = { id: user.Id, seller_id: seller.Id, cart_id: cart.id };
         return jwt.sign(payload, SECRET_KEY, { expiresIn: '1d' });
     } catch (error) {
         console.error('Error creating token', error);
