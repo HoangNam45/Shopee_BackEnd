@@ -327,6 +327,14 @@ WHERE
     return result.recordset;
 };
 
+const getProductById = async (productId, transaction) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .query('SELECT * FROM Products WHERE Id = @ProductId');
+    return result.recordset[0];
+};
+
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -346,4 +354,5 @@ module.exports = {
     updateProductStatus,
     deleteProductById,
     getProductsBySearch,
+    getProductById,
 };

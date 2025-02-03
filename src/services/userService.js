@@ -83,11 +83,49 @@ const getUserCart = async (userId) => {
 const getUserCartItems = async (cart_id) => {
     const request = await getRequest();
     const result = await request.input('cartId', sql.Int, cart_id).query(`
-        SELECT p.Id,p.BackGround, p.Name, p.Stock, ci.quantity, ci.cart_id FROM Products p
-        JOIN CartItems ci
-        ON ci.product_id=p.Id AND ci.cart_id=@cartId
+        SELECT 
+    p.Id,
+    p.Name, 
+    p.Description, 
+    p.Price AS Original_price, 
+    p.Stock,
+    p.SellerId,
+	p.BackGround,
+	ci.quantity,
+	ci.cart_id,
+    COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+    CASE 
+        WHEN d.Discount_percentage IS NOT NULL THEN 
+            p.price - (p.price * d.Discount_percentage / 100)
+        ELSE 
+            p.price
+    END AS Final_price
+FROM 
+    Products p
+LEFT JOIN (
+    SELECT 
+        Product_id, 
+        Discount_percentage
+    FROM 
+        Discount
+    WHERE 
+        GETDATE() BETWEEN Start_date AND End_date
+)  d
+ON 
+    p.Id = d.Product_id
+ JOIN CartItems ci
+ON ci.product_id=p.Id  AND ci.cart_id=@cartId
     `);
     return result.recordset;
+};
+
+const deleteUserCartItem = async ({ cart_id, product_id }) => {
+    const request = await getRequest();
+    await request
+        .input('cart_id', sql.Int, cart_id)
+        .input('product_id', sql.Int, product_id)
+        .query('DELETE FROM CartItems WHERE cart_id = @cart_id AND product_id = @product_id');
+    return;
 };
 
 module.exports = {
@@ -99,4 +137,5 @@ module.exports = {
     checkProductInCart,
     updateProductQuantityInCart,
     getUserCartItems,
+    deleteUserCartItem,
 };
