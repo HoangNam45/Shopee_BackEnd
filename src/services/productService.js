@@ -157,6 +157,7 @@ const getProductDetail = async ({ slug, transaction = null }) => {
     p.Price AS Original_price, 
     p.Stock,
     p.SellerId, 
+    p.BackGround,
     ProductImages.ImageUrl,
     COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
     CASE 
@@ -335,6 +336,15 @@ const getProductById = async (productId, transaction) => {
     return result.recordset[0];
 };
 
+const updateProductStock = async ({ product_id, quantity, transaction }) => {
+    const request = await getRequest(transaction);
+    await request
+        .input('ProductId', sql.Int, product_id)
+        .input('Quantity', sql.Int, quantity)
+        .query('UPDATE Products SET Stock = Stock - @Quantity WHERE Id = @ProductId');
+    return;
+};
+
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -355,4 +365,5 @@ module.exports = {
     deleteProductById,
     getProductsBySearch,
     getProductById,
+    updateProductStock,
 };

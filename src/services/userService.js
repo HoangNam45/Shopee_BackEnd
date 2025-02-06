@@ -119,12 +119,39 @@ ON ci.product_id=p.Id  AND ci.cart_id=@cartId
     return result.recordset;
 };
 
-const deleteUserCartItem = async ({ cart_id, product_id }) => {
-    const request = await getRequest();
+const deleteUserCartItem = async ({ cart_id, product_id, transaction }) => {
+    const request = await getRequest(transaction);
     await request
         .input('cart_id', sql.Int, cart_id)
         .input('product_id', sql.Int, product_id)
         .query('DELETE FROM CartItems WHERE cart_id = @cart_id AND product_id = @product_id');
+    return;
+};
+
+const createOrder = async ({ user_id, name, phoneNumber, address, total_price, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('user_id', sql.Int, user_id)
+        .input('name', sql.NVarChar, name)
+        .input('phone', sql.VarChar, phoneNumber)
+        .input('address', sql.NVarChar, address)
+        .input('total_price', sql.Int, total_price)
+        .query(
+            "INSERT INTO Orders (user_id, name, phone, address, total_price, status) OUTPUT INSERTED.order_id VALUES (@user_id, @name, @phone, @address, @total_price, 'Pending')",
+        );
+    return result.recordset[0].order_id;
+};
+
+const createOrderDetail = async ({ order_id, product_id, quantity, price, transaction }) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('order_id', sql.Int, order_id)
+        .input('product_id', sql.Int, product_id)
+        .input('quantity', sql.Int, quantity)
+        .input('price', sql.Int, price)
+        .query(
+            'INSERT INTO Order_Items(order_id, product_id, quantity, price) VALUES (@order_id, @product_id, @quantity, @price)',
+        );
     return;
 };
 
@@ -138,4 +165,6 @@ module.exports = {
     updateProductQuantityInCart,
     getUserCartItems,
     deleteUserCartItem,
+    createOrder,
+    createOrderDetail,
 };

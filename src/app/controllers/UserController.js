@@ -4,8 +4,11 @@ const {
     updateProductQuantityInCart,
     getUserCartItems,
     deleteUserCartItem,
+    createOrder,
+    createOrderDetail,
 } = require('../../services/userService');
-const { getProductById } = require('../../services/productService');
+const { getProductById, updateProductStock } = require('../../services/productService');
+const { poolPromise } = require('../../config/db/index');
 
 class UserController {
     // [POST] /user/add_product_to_cart
@@ -87,6 +90,62 @@ class UserController {
             res.status(200).json({ message: 'Cart item deleted' });
         } catch (error) {
             console.error('Error deleting cart item', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [POST] /user/create_order
+    async createOrder(req, res) {
+        let transaction;
+        try {
+            const user = req.user;
+            const cart_id = user.cart_id;
+            const { name, phoneNumber, address, totalPrice, checkedProducts } = req.body;
+            const pool = await poolPromise;
+            transaction = pool.transaction();
+
+            await transaction.begin();
+            // Create order
+            const order_id = await createOrder({
+                user_id: user.id,
+                name,
+                phoneNumber,
+                address,
+                total_price: totalPrice,
+                transaction,
+            });
+
+            console.log('order_id', order_id);
+            // Create order detail
+            for (const product of checkedProducts) {
+                await createOrderDetail({
+                    order_id,
+                    product_id: product.Id,
+                    quantity: product.quantity,
+                    price: product.Final_price * product.quantity,
+                    transaction,
+                });
+            }
+            // Update product stock
+            for (const product of checkedProducts) {
+                await updateProductStock({
+                    product_id: product.Id,
+                    quantity: product.quantity,
+                    transaction,
+                });
+            }
+            // Delete cart items
+            for (const product of checkedProducts) {
+                await deleteUserCartItem({ cart_id, product_id: product.Id, transaction });
+            }
+
+            // Send notification to seller
+            await transaction.commit();
+
+            res.status(200).json({ message: 'Order created' });
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error creating order', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

@@ -238,6 +238,7 @@ class ProductController {
                 SellerId: product[0].SellerId,
                 Final_price: product[0].Final_price,
                 Discount: product[0].Discount_percentage,
+                BackGround: product[0].BackGround,
             };
 
             const seller = await getSellerById(productData.SellerId, transaction);
