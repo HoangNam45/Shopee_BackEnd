@@ -1,5 +1,10 @@
 const { decodeToken } = require('../../services/authService');
-const { getSellerByUserId, updateSellerInfo, createDiscount } = require('../../services/sellerService');
+const {
+    getSellerByUserId,
+    updateSellerInfo,
+    createDiscount,
+    getSellerPendingOrders,
+} = require('../../services/sellerService');
 class SellerController {
     // [GET] /seller/information
     async getSellerInfo(req, res) {
@@ -40,6 +45,20 @@ class SellerController {
             res.status(200).json(sellerNewInfo);
         } catch (error) {
             console.error('Error updating seller information', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /seller/pending_orders
+    async getSellerPendingOrders(req, res) {
+        try {
+            const user = req.user;
+            const sellerId = user.seller_id;
+            const pendingOrders = await getSellerPendingOrders({ sellerId });
+
+            res.status(200).json(pendingOrders);
+        } catch (error) {
+            console.error('Error fetching pending orders', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

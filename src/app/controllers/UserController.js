@@ -6,6 +6,8 @@ const {
     deleteUserCartItem,
     createOrder,
     createOrderDetail,
+    getUserPendingOrders,
+    getUserAllOrders,
 } = require('../../services/userService');
 const { getProductById, updateProductStock } = require('../../services/productService');
 const { poolPromise } = require('../../config/db/index');
@@ -116,6 +118,7 @@ class UserController {
             });
 
             console.log('order_id', order_id);
+            console.log('checkedProducts', checkedProducts);
             // Create order detail
             for (const product of checkedProducts) {
                 await createOrderDetail({
@@ -146,6 +149,31 @@ class UserController {
         } catch (error) {
             await transaction.rollback();
             console.error('Error creating order', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/pending_purchases
+    async getPendingPurchases(req, res) {
+        try {
+            const user = req.user;
+            const pendingPurchases = await getUserPendingOrders(user.id);
+            console.log(pendingPurchases);
+            res.status(200).json(pendingPurchases);
+        } catch (error) {
+            console.error('Error getting pending purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/all_purchases
+    async getAllPurchases(req, res) {
+        try {
+            const user = req.user;
+            const allPurchases = await getUserAllOrders(user.id);
+            res.status(200).json(allPurchases);
+        } catch (error) {
+            console.error('Error getting all purchases', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

@@ -8,4 +8,7 @@ router.put('/update_cart_item_quantity', UserController.updateCartItemQuantity);
 router.delete('/delete_cart_item/:productId', UserController.deleteCartItem);
 
 router.post('/create_order', UserController.createOrder);
+
+router.get('/pending_purchases', UserController.getPendingPurchases);
+router.get('/all_purchases', UserController.getAllPurchases);
 module.exports = router;
