@@ -54,6 +54,22 @@ class SellerController {
         try {
             const user = req.user;
             const sellerId = user.seller_id;
+            console.log(sellerId);
+            const pendingOrders = await getSellerPendingOrders({ sellerId });
+
+            res.status(200).json(pendingOrders);
+        } catch (error) {
+            console.error('Error fetching pending orders', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /seller/all_orders
+    async getSellerAllOrders(req, res) {
+        try {
+            const user = req.user;
+            const sellerId = user.seller_id;
+            console.log(sellerId);
             const pendingOrders = await getSellerPendingOrders({ sellerId });
 
             res.status(200).json(pendingOrders);

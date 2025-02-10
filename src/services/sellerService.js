@@ -50,7 +50,7 @@ const updateSellerInfo = async ({ userId, shopName, avatar }) => {
 const getSellerPendingOrders = async ({ sellerId }) => {
     const request = await getRequest();
     const result = await request.input('SellerId', sql.Int, sellerId).query(`
-            SELECT oi.order_item_id,u.Account, p.BackGround, p.Name, oi.quantity, oi.price, o.name, o.address, o.phone, o.status FROM Sellers s
+            SELECT oi.order_item_id,u.Account AS customer, p.BackGround, p.Name AS ProductName, oi.quantity, oi.price, o.name, o.address, o.phone, o.status FROM Sellers s
                 JOIN Products p
                 ON s.Id=p.SellerId
                 JOIN Order_Items oi
@@ -60,8 +60,34 @@ const getSellerPendingOrders = async ({ sellerId }) => {
                 JOIN Users u
                 ON u.Id=o.user_id
                 WHERE s.Id=@SellerId AND o.status='Pending'
+                ORDER BY o.created_at DESC
         `);
     return result.recordset;
 };
 
-module.exports = { createSeller, getSellerByUserId, updateSellerInfo, getSellerById, getSellerPendingOrders };
+const getSellerAllOrders = async ({ sellerId }) => {
+    const request = await getRequest();
+    const result = await request.input('SellerId', sql.Int, sellerId).query(`
+            SELECT oi.order_item_id,u.Account AS customer, p.BackGround, p.Name AS ProductName, oi.quantity, oi.price, o.name, o.address, o.phone, o.status FROM Sellers s
+                JOIN Products p
+                ON s.Id=p.SellerId
+                JOIN Order_Items oi
+                ON p.Id=oi.product_id
+                JOIN Orders o
+                ON o.order_id=oi.order_id
+                JOIN Users u
+                ON u.Id=o.user_id
+                WHERE s.Id=@SellerId
+                ORDER BY o.created_at DESC
+        `);
+    return result.recordset;
+};
+
+module.exports = {
+    createSeller,
+    getSellerByUserId,
+    updateSellerInfo,
+    getSellerById,
+    getSellerPendingOrders,
+    getSellerAllOrders,
+};
