@@ -40,7 +40,8 @@ router.get('/seller/detail_product/:productId', productController.getSellerDetai
 
 router.get('/search', productController.getProductsBySearch);
 router.get('/detail/:slug', productController.getProductDetail);
-
+router.put('/update_product_sold/:productId', productController.updateProductSold);
+router.put('/update_product_stock/:productId', productController.updateProductStock);
 router.get('/', productController.getProducts);
 
 module.exports = router;

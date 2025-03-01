@@ -64,6 +64,7 @@ const getSellerPendingOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi
@@ -113,6 +114,7 @@ const getSellerAllOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi
@@ -161,6 +163,7 @@ const getSellerShippingOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi
@@ -210,6 +213,7 @@ const getSellerCanceledOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi
@@ -259,6 +263,7 @@ const getSellerCompletedOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi
@@ -308,6 +313,7 @@ const getSellerFailedDeliveryOrders = async ({ sellerId }) => {
                     oi.order_item_id,
                     p.BackGround,
                     p.Name AS ProductName,
+                    p.Id AS ProductId,
                     oi.quantity,
                     oi.price
                 FROM Order_Items oi

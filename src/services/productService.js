@@ -338,10 +338,30 @@ const getProductById = async (productId, transaction) => {
 
 const updateProductStock = async ({ product_id, quantity, transaction }) => {
     const request = await getRequest(transaction);
+    console.log(product_id, quantity);
     await request
         .input('ProductId', sql.Int, product_id)
         .input('Quantity', sql.Int, quantity)
         .query('UPDATE Products SET Stock = Stock - @Quantity WHERE Id = @ProductId');
+    return;
+};
+
+const updateProductSold = async ({ productId, quantity, transaction }) => {
+    console.log(productId, quantity);
+    const request = await getRequest(transaction);
+    await request
+        .input('ProductId', sql.Int, productId)
+        .input('Quantity', sql.Int, quantity)
+        .query('UPDATE Products SET Sold = Sold + @Quantity WHERE Id = @ProductId');
+    return;
+};
+
+const updateProductStockAfterOrder = async ({ productId, quantity, transaction }) => {
+    const request = await getRequest(transaction);
+    await request
+        .input('ProductId', sql.Int, productId)
+        .input('Quantity', sql.Int, quantity)
+        .query('UPDATE Products SET Stock = Stock + @Quantity WHERE Id = @ProductId');
     return;
 };
 
@@ -366,4 +386,6 @@ module.exports = {
     getProductsBySearch,
     getProductById,
     updateProductStock,
+    updateProductSold,
+    updateProductStockAfterOrder,
 };

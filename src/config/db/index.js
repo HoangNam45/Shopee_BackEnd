@@ -1,8 +1,8 @@
 const sql = require('mssql/msnodesqlv8');
 const config = {
-    // server: '21AK22-COM\\DAYLASQL',
-    server: 'DESKTOP-TMPNLFQ\\NAM',
-    database: 'ShopeeClone',
+    server: '21AK22-COM\\DAYLASQL',
+    // server: 'DESKTOP-TMPNLFQ\\NAM',
+    database: 'Shopee',
     driver: 'msnodesqlv8',
     options: {
         trustedConnection: true,

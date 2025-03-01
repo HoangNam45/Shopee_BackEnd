@@ -18,8 +18,11 @@ const {
     updateProductStatus,
     deleteProductById,
     getProductsBySearch,
+    updateProductStockAfterOrder,
     addDiscount,
     addDiscountProduct,
+    updateProductSold,
+    updateProductStock,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -475,6 +478,33 @@ class ProductController {
             res.status(200).json(productData);
         } catch (error) {
             console.error('Error fetching products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[PUT] /products/update_product_sold/:productId
+    async updateProductSold(req, res) {
+        try {
+            const { productId } = req.params;
+            const { quantity } = req.body;
+            await updateProductSold({ productId, quantity });
+            res.status(200).json("Product's sold quantity updated successfully");
+        } catch (error) {
+            console.error('Error update product sold', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    //[PUT] /products/update_product_stock/:productId
+    async updateProductStock(req, res) {
+        try {
+            const { productId } = req.params;
+            const { quantity } = req.body;
+            console.log(productId, quantity);
+            await updateProductStockAfterOrder({ productId, quantity });
+            res.status(200).json("Product's stock updated successfully");
+        } catch (error) {
+            console.error('Error update product sold', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
