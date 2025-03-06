@@ -8,6 +8,7 @@ const {
     createOrderDetail,
     getUserPendingOrders,
     getUserAllOrders,
+    getUserName,
 } = require('../../services/userService');
 const { getProductById, updateProductStock } = require('../../services/productService');
 const { poolPromise } = require('../../config/db/index');
@@ -174,6 +175,17 @@ class UserController {
             res.status(200).json(allPurchases);
         } catch (error) {
             console.error('Error getting all purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    async getUserName(req, res) {
+        try {
+            const user = req.user;
+            const name = await getUserName(user.id);
+            res.status(200).json(name);
+        } catch (error) {
+            console.error('Error getting user name', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

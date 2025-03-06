@@ -187,6 +187,12 @@ const getUserAllOrders = async (userId) => {
     return result.recordset;
 };
 
+const getUserName = async (userId) => {
+    const request = await getRequest();
+    const result = await request.input('userId', sql.Int, userId).query('SELECT Account FROM Users WHERE Id = @userId');
+    return result.recordset[0];
+};
+
 module.exports = {
     createUser,
     getUserByAccount,
@@ -201,4 +207,5 @@ module.exports = {
     createOrderDetail,
     getUserPendingOrders,
     getUserAllOrders,
+    getUserName,
 };

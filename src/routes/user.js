@@ -6,6 +6,7 @@ router.post('/add_product_to_cart', UserController.addProductToCard);
 router.get('/get_cart_items', UserController.getCartItems);
 router.put('/update_cart_item_quantity', UserController.updateCartItemQuantity);
 router.delete('/delete_cart_item/:productId', UserController.deleteCartItem);
+router.get('/get_user_name', UserController.getUserName);
 
 router.post('/create_order', UserController.createOrder);
 
