@@ -174,7 +174,7 @@ const getUserPendingOrders = async (userId) => {
 const getUserAllOrders = async (userId) => {
     const request = await getRequest();
     const result = await request.input('userId', sql.Int, userId).query(`
-            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar FROM Orders o 
+            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar, s.Id as sellerId FROM Orders o 
             JOIN Order_Items oi 
             ON oi.order_id=o.order_id 
             JOIN Products p
