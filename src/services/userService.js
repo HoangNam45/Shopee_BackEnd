@@ -171,6 +171,70 @@ const getUserPendingOrders = async (userId) => {
     return result.recordset;
 };
 
+const getUserShippingOrders = async (userId) => {
+    const request = await getRequest();
+    const result = await request.input('userId', sql.Int, userId).query(`
+            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar FROM Orders o 
+            JOIN Order_Items oi 
+            ON oi.order_id=o.order_id 
+            JOIN Products p
+            ON oi.product_id= p.Id
+            JOIN Sellers s
+            ON s.Id=p.SellerId
+            WHERE user_id = @userId AND o.status = 'Shipping'
+            ORDER BY o.created_at DESC
+`);
+    return result.recordset;
+};
+
+const getUserCompletedOrders = async (userId) => {
+    const request = await getRequest();
+    const result = await request.input('userId', sql.Int, userId).query(`
+            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar FROM Orders o 
+            JOIN Order_Items oi 
+            ON oi.order_id=o.order_id 
+            JOIN Products p
+            ON oi.product_id= p.Id
+            JOIN Sellers s
+            ON s.Id=p.SellerId
+            WHERE user_id = @userId AND o.status = 'Completed'
+            ORDER BY o.created_at DESC
+`);
+    return result.recordset;
+};
+
+const getUserCanceledOrders = async (userId) => {
+    const request = await getRequest();
+    const result = await request.input('userId', sql.Int, userId).query(`
+            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar FROM Orders o 
+            JOIN Order_Items oi 
+            ON oi.order_id=o.order_id 
+            JOIN Products p
+            ON oi.product_id= p.Id
+            JOIN Sellers s
+            ON s.Id=p.SellerId
+            WHERE user_id = @userId AND o.status = 'Canceled'
+            ORDER BY o.created_at DESC
+`);
+    return result.recordset;
+};
+
+const getUserFailDeliveryOrders = async (userId) => {
+    const request = await getRequest();
+    const result = await request.input('userId', sql.Int, userId).query(`
+            SELECT oi.order_item_id, o.status, oi.quantity, oi.price, oi.order_id, p.BackGround, p.Name, s.Name AS sellerName, s.Avatar FROM Orders o 
+            JOIN Order_Items oi 
+            ON oi.order_id=o.order_id 
+            JOIN Products p
+            ON oi.product_id= p.Id
+            JOIN Sellers s
+            ON s.Id=p.SellerId
+            WHERE user_id = @userId AND o.status = 'Fail Delivery'
+            ORDER BY o.created_at DESC
+`);
+    return result.recordset;
+};
+
 const getUserAllOrders = async (userId) => {
     const request = await getRequest();
     const result = await request.input('userId', sql.Int, userId).query(`
@@ -208,4 +272,8 @@ module.exports = {
     getUserPendingOrders,
     getUserAllOrders,
     getUserName,
+    getUserShippingOrders,
+    getUserCompletedOrders,
+    getUserCanceledOrders,
+    getUserFailDeliveryOrders,
 };

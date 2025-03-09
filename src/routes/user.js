@@ -11,5 +11,10 @@ router.get('/get_user_name', UserController.getUserName);
 router.post('/create_order', UserController.createOrder);
 
 router.get('/pending_purchases', UserController.getPendingPurchases);
+router.get('/shipping_purchases', UserController.getShippingPurchases);
 router.get('/all_purchases', UserController.getAllPurchases);
+router.get('/canceled_purchases', UserController.getCanceledPurchases);
+router.get('/completed_purchases', UserController.getCompletedPurchases);
+router.get('/fail_delivery_purchases', UserController.getFailDeliveryPurchases);
+
 module.exports = router;

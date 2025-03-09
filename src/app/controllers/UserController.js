@@ -9,6 +9,10 @@ const {
     getUserPendingOrders,
     getUserAllOrders,
     getUserName,
+    getUserShippingOrders,
+    getUserCompletedOrders,
+    getUserCanceledOrders,
+    getUserFailDeliveryOrders,
 } = require('../../services/userService');
 const { getProductById, updateProductStock } = require('../../services/productService');
 const { poolPromise } = require('../../config/db/index');
@@ -175,6 +179,54 @@ class UserController {
             res.status(200).json(allPurchases);
         } catch (error) {
             console.error('Error getting all purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/shipping_purchases
+    async getShippingPurchases(req, res) {
+        try {
+            const user = req.user;
+            const shippingPurchases = await getUserShippingOrders(user.id);
+            res.status(200).json(shippingPurchases);
+        } catch (error) {
+            console.error('Error getting shipping purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/completed_purchases
+    async getCompletedPurchases(req, res) {
+        try {
+            const user = req.user;
+            const completedPurchases = await getUserCompletedOrders(user.id);
+            res.status(200).json(completedPurchases);
+        } catch (error) {
+            console.error('Error getting shipping purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/canceled_purchases
+    async getCanceledPurchases(req, res) {
+        try {
+            const user = req.user;
+            const canceledPurchases = await getUserCanceledOrders(user.id);
+            res.status(200).json(canceledPurchases);
+        } catch (error) {
+            console.error('Error getting canceled purchases', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /user/fail_delivey_purchases
+    async getFailDeliveryPurchases(req, res) {
+        try {
+            const user = req.user;
+            const failDeliveryPurchases = await getUserFailDeliveryOrders(user.id);
+            res.status(200).json(failDeliveryPurchases);
+        } catch (error) {
+            console.error('Error getting fail delivery purchases', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
