@@ -13,6 +13,7 @@ const checkUserToken = async (req, res, next) => {
         '/uploads/images/productBackGroundImage/:slug',
         '/uploads/images/productImages/:slug',
         '/uploads/images/sellerAvatar/:slug',
+        '/uploads/images/userAvatar/:slug',
     ];
 
     const isNonSecurePath = nonSecurePaths.some((path) => match(path)(req.originalUrl));

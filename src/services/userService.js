@@ -11,7 +11,11 @@ const createUser = async ({ account, password, transaction = null }) => {
         const userResult = await request
             .input('account', sql.VarChar, account)
             .input('password', sql.VarChar, hashedPassword)
-            .query('INSERT INTO Users (Account, Password) OUTPUT INSERTED.Id VALUES (@account, @password)');
+            .input('name', sql.VarChar, account)
+            .input('avatar', sql.VarChar, 'default_avatar.jpg')
+            .query(
+                'INSERT INTO Users (Account, Password, Name, Avatar) OUTPUT INSERTED.Id VALUES (@account, @password, @name, @avatar)',
+            );
         const userId = userResult.recordset[0].Id;
         // Insert into Sellers table
 
@@ -251,10 +255,21 @@ const getUserAllOrders = async (userId) => {
     return result.recordset;
 };
 
-const getUserName = async (userId) => {
+const getUserInfo = async (userId) => {
     const request = await getRequest();
-    const result = await request.input('userId', sql.Int, userId).query('SELECT Account FROM Users WHERE Id = @userId');
+    const result = await request
+        .input('userId', sql.Int, userId)
+        .query('SELECT Name, Avatar FROM Users WHERE Id = @userId');
     return result.recordset[0];
+};
+
+const updateUserInfo = async ({ userId, Name, Avatar }) => {
+    const request = await getRequest();
+    await request
+        .input('userId', sql.Int, userId)
+        .input('Name', sql.NVarChar, Name)
+        .input('Avatar', sql.VarChar, Avatar)
+        .query('UPDATE Users SET Name = @Name, Avatar = @Avatar WHERE Id = @userId');
 };
 
 module.exports = {
@@ -271,9 +286,10 @@ module.exports = {
     createOrderDetail,
     getUserPendingOrders,
     getUserAllOrders,
-    getUserName,
+    getUserInfo,
     getUserShippingOrders,
     getUserCompletedOrders,
     getUserCanceledOrders,
     getUserFailDeliveryOrders,
+    updateUserInfo,
 };

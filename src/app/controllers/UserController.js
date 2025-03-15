@@ -8,11 +8,12 @@ const {
     createOrderDetail,
     getUserPendingOrders,
     getUserAllOrders,
-    getUserName,
+    getUserInfo,
     getUserShippingOrders,
     getUserCompletedOrders,
     getUserCanceledOrders,
     getUserFailDeliveryOrders,
+    updateUserInfo,
 } = require('../../services/userService');
 const { getProductById, updateProductStock } = require('../../services/productService');
 const { poolPromise } = require('../../config/db/index');
@@ -231,13 +232,32 @@ class UserController {
         }
     }
 
-    async getUserName(req, res) {
+    async getUserInfo(req, res) {
         try {
             const user = req.user;
-            const name = await getUserName(user.id);
-            res.status(200).json(name);
+            const user_info = await getUserInfo(user.id);
+            res.status(200).json(user_info);
         } catch (error) {
             console.error('Error getting user name', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    async updateUserInfo(req, res) {
+        try {
+            const user = req.user;
+            const { Name } = req.body;
+            let { Avatar } = req.body;
+            if (req.file) {
+                Avatar = req.file ? req.file.filename : null;
+            }
+
+            console.log('avatar', Avatar);
+            console.log('name', Name);
+            await updateUserInfo({ userId: user.id, Name, Avatar });
+            res.status(200).json({ message: 'User information updated', Avatar });
+        } catch (error) {
+            console.error('Error updating user information', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

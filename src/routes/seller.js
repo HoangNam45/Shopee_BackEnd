@@ -3,7 +3,7 @@ const router = express.Router();
 const upload = require('../app/middlewares/UpdateSellerInformation');
 
 const SellerController = require('../app/controllers/SellerController');
-const { route } = require('./product');
+
 router.get('/information', SellerController.getSellerInfo);
 router.put('/updateInformation', upload.single('shopAvt'), SellerController.updateSellerInfo);
 
