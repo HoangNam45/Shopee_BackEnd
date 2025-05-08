@@ -211,6 +211,10 @@ class ProductController {
 
     // [GET] /products
     async getProducts(req, res) {
+        console.log('alo');
+        const { page, limit } = req.query;
+        const offset = (page - 1) * limit;
+        console.log('alooo', offset, limit);
         try {
             const productData = await getLatestProducts();
             res.status(200).json(productData);
@@ -274,11 +278,7 @@ class ProductController {
         const offset = (page - 1) * limit;
 
         const user = req.user;
-        // console.log(user);
-        // const token = req.headers.authorization.split(' ')[1];
-        // console.log(token);
 
-        // const user = decodeToken(token);
         const userId = user.id;
 
         try {
