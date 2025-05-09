@@ -23,6 +23,7 @@ const {
     addDiscountProduct,
     updateProductSold,
     updateProductStock,
+    getTotalProducts,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -211,15 +212,23 @@ class ProductController {
 
     // [GET] /products
     async getProducts(req, res) {
-        console.log('alo');
-        const { page, limit } = req.query;
-        const offset = (page - 1) * limit;
-        console.log('alooo', offset, limit);
+        const { page = 1, limit = 10 } = req.query;
         try {
-            const productData = await getLatestProducts();
+            const productData = await getLatestProducts({ page: parseInt(page), limit: parseInt(limit) });
             res.status(200).json(productData);
         } catch (error) {
             console.error('Error fetching products', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    // [GET] /products/total
+    async getTotalProducts(req, res) {
+        try {
+            const totalProducts = await getTotalProducts();
+            res.status(200).json(totalProducts);
+        } catch (error) {
+            console.error('Error fetching total products', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

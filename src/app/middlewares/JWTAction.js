@@ -7,7 +7,7 @@ const checkUserToken = async (req, res, next) => {
     const nonSecurePaths = [
         '/auth/login',
         '/auth/register',
-        '/products',
+        '/products/:slug',
         '/products/search/:slug',
         '/products/detail/:slug',
         '/uploads/images/productBackGroundImage/:slug',
@@ -16,7 +16,7 @@ const checkUserToken = async (req, res, next) => {
         '/uploads/images/userAvatar/:slug',
     ];
 
-    const isNonSecurePath = nonSecurePaths.some((path) => match(path)(req.path));
+    const isNonSecurePath = nonSecurePaths.some((path) => match(path)(req.originalUrl));
 
     if (isNonSecurePath) {
         return next();

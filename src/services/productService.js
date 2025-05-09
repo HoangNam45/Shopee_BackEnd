@@ -113,37 +113,41 @@ const insertProductPriceRanges = async ({ productId, priceRange, transaction = n
     return;
 };
 
-const getLatestProducts = async () => {
+const getLatestProducts = async ({ page = 1, limit = 10 }) => {
+    const offset = (page - 1) * limit; // Calculate the offset
     const pool = await poolPromise;
     const request = pool.request();
-    const result = await request.query(`
-        SELECT 
-            p.Id,
-            p.Name,
-			p.BackGround,
-			p.Slug,
-            p.price AS Original_price,
-            COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
-            CASE 
-                WHEN d.Discount_percentage IS NOT NULL THEN 
-                    p.price - (p.price * d.Discount_percentage / 100)
-                ELSE 
-                    p.price
-            END AS Final_price
-        FROM 
-            Products p
-        LEFT JOIN (
+    const result = await request.input('Limit', sql.Int, limit).input('Offset', sql.Int, offset).query(`
             SELECT 
-                Product_id, 
-                Discount_percentage
+                p.Id,
+                p.Name,
+                p.BackGround,
+                p.Slug,
+                p.Price AS Original_price,
+                COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+                CASE 
+                    WHEN d.Discount_percentage IS NOT NULL THEN 
+                        p.Price - (p.Price * d.Discount_percentage / 100)
+                    ELSE 
+                        p.Price
+                END AS Final_price
             FROM 
-                Discount
-            WHERE 
-                GETDATE() BETWEEN Start_date AND End_date
-        ) d
-        ON 
-            p.Id = d.Product_id;
-    `);
+                Products p
+            LEFT JOIN (
+                SELECT 
+                    Product_id, 
+                    Discount_percentage
+                FROM 
+                    Discount
+                WHERE 
+                    GETDATE() BETWEEN Start_date AND End_date
+            ) d
+            ON 
+                p.Id = d.Product_id
+            ORDER BY 
+                p.CreatedAt DESC
+            OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+        `);
     return result.recordset;
 };
 
@@ -365,6 +369,16 @@ const updateProductStockAfterOrder = async ({ productId, quantity, transaction }
     return;
 };
 
+const getTotalProducts = async () => {
+    const pool = await poolPromise;
+    const request = pool.request();
+    const result = await request.query(`
+        SELECT COUNT(*) AS TotalProducts
+        FROM Products
+    `);
+    return result.recordset[0].TotalProducts;
+};
+
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -388,4 +402,5 @@ module.exports = {
     updateProductStock,
     updateProductSold,
     updateProductStockAfterOrder,
+    getTotalProducts,
 };

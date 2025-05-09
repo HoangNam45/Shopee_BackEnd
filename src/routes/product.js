@@ -39,6 +39,7 @@ router.get('/seller/total_hidden_products', productController.getSellerTotalHidd
 router.get('/seller/detail_product/:productId', productController.getSellerDetailProduct);
 
 router.get('/search', productController.getProductsBySearch);
+router.get('/total', productController.getTotalProducts);
 router.get('/detail/:slug', productController.getProductDetail);
 router.put('/update_product_sold/:productId', productController.updateProductSold);
 router.put('/update_product_stock/:productId', productController.updateProductStock);
