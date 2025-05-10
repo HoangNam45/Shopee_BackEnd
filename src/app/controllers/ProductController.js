@@ -42,8 +42,6 @@ class ProductController {
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
 
-            console.log(productImages);
-
             const {
                 productName,
                 productDescription,
@@ -116,7 +114,6 @@ class ProductController {
 
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
-            console.log(productImages);
             const {
                 productName,
                 productDescription,
@@ -170,8 +167,7 @@ class ProductController {
             } else {
                 updatedProdudctImages = existingImagesArray;
             }
-            console.log(productExistingImages);
-            console.log(updatedProdudctImages);
+
             await deleteProductImagesById({ productId, transaction });
 
             for (const image of updatedProdudctImages) {
@@ -255,13 +251,14 @@ class ProductController {
                 Final_price: product[0].Final_price,
                 Discount: product[0].Discount_percentage,
                 BackGround: product[0].BackGround,
+                Sold: product[0].Sold,
             };
 
             const seller = await getSellerById(productData.SellerId, transaction);
-
             const sellerData = {
                 SellerName: seller.Name,
                 SellerAvatar: seller.Avatar,
+                SellerParticipation: seller.Created_At,
             };
 
             await transaction.commit();
@@ -467,7 +464,6 @@ class ProductController {
                 ImageUrl: product.map((record) => record.ImageUrl),
             };
 
-            console.log(productData);
             await transaction.commit();
             res.status(200).json(productData);
         } catch (error) {
@@ -480,13 +476,16 @@ class ProductController {
     //[GET] /products/search
     async getProductsBySearch(req, res) {
         try {
-            const { query } = req.query;
-            console.log(query);
-            const productData = await getProductsBySearch({ query });
-            console.log(productData);
-            res.status(200).json(productData);
+            const { query, page, limit, sortBy } = req.query;
+            const result = await getProductsBySearch({
+                query,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                sortBy,
+            });
+            res.status(200).json(result);
         } catch (error) {
-            console.error('Error fetching products', error);
+            console.error('Error fetching products by search', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
@@ -509,7 +508,6 @@ class ProductController {
         try {
             const { productId } = req.params;
             const { quantity } = req.body;
-            console.log(productId, quantity);
             await updateProductStockAfterOrder({ productId, quantity });
             res.status(200).json("Product's stock updated successfully");
         } catch (error) {

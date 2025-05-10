@@ -123,6 +123,7 @@ const getLatestProducts = async ({ page = 1, limit = 10 }) => {
                 p.Name,
                 p.BackGround,
                 p.Slug,
+                p.Sold,
                 p.Price AS Original_price,
                 COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
                 CASE 
@@ -162,6 +163,7 @@ const getProductDetail = async ({ slug, transaction = null }) => {
     p.Stock,
     p.SellerId, 
     p.BackGround,
+    p.Sold,
     ProductImages.ImageUrl,
     COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
     CASE 
@@ -299,37 +301,98 @@ const deleteProductImagesById = async ({ productId, transaction }) => {
     return;
 };
 
-const getProductsBySearch = async ({ query, transaction }) => {
+// const getProductsBySearch = async ({ query, transaction }) => {
+//     const request = await getRequest(transaction);
+//     const result = await request.input('query', sql.NVarChar, `%${query}%`).query(`SELECT
+//     p.Id,
+//     p.Name,
+//     p.BackGround,
+//     p.Slug,
+//     p.price AS Original_price,
+//     COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+//     CASE
+//         WHEN d.Discount_percentage IS NOT NULL THEN
+//             p.price - (p.price * d.Discount_percentage / 100)
+//         ELSE
+//             p.price
+//     END AS Final_price
+// FROM
+//     Products p
+// LEFT JOIN (
+//     SELECT
+//         Product_id,
+//         Discount_percentage
+//     FROM
+//         Discount
+//     WHERE
+//         GETDATE() BETWEEN Start_date AND End_date
+// ) d
+// ON
+//     p.Id = d.Product_id
+// WHERE
+//     p.Name LIKE @query`);
+//     return result.recordset;
+// };
+
+const getProductsBySearch = async ({ query, page = 1, limit = 5, sortBy = 'latest', transaction }) => {
+    const offset = (page - 1) * limit;
     const request = await getRequest(transaction);
-    const result = await request.input('query', sql.NVarChar, `%${query}%`).query(`SELECT 
-    p.Id,
-    p.Name,
-    p.BackGround,
-    p.Slug,
-    p.price AS Original_price,
-    COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
-    CASE 
-        WHEN d.Discount_percentage IS NOT NULL THEN 
-            p.price - (p.price * d.Discount_percentage / 100)
-        ELSE 
-            p.price
-    END AS Final_price
-FROM 
-    Products p
-LEFT JOIN (
-    SELECT 
-        Product_id, 
-        Discount_percentage
-    FROM 
-        Discount
-    WHERE 
-        GETDATE() BETWEEN Start_date AND End_date
-) d
-ON 
-    p.Id = d.Product_id
-WHERE 
-    p.Name LIKE @query`);
-    return result.recordset;
+
+    // Determine ORDER BY clause
+    let orderByClause = 'p.CreatedAt DESC';
+    if (sortBy === 'sold') {
+        orderByClause = 'p.Sold DESC';
+    }
+
+    // Get paginated products
+    const productsResult = await request
+        .input('query', sql.NVarChar, `%${query}%`)
+        .input('Limit', sql.Int, limit)
+        .input('Offset', sql.Int, offset).query(`
+            SELECT 
+                p.Id,
+                p.Name,
+                p.BackGround,
+                p.Slug,
+                p.Stock,
+                p.Sold,
+                p.price AS Original_price,
+                COALESCE(d.Discount_percentage, 0) AS Discount_percentage,
+                CASE 
+                    WHEN d.Discount_percentage IS NOT NULL THEN 
+                        p.price - (p.price * d.Discount_percentage / 100)
+                    ELSE 
+                        p.price
+                END AS Final_price
+            FROM 
+                Products p
+            LEFT JOIN (
+                SELECT 
+                    Product_id, 
+                    Discount_percentage
+                FROM 
+                    Discount
+                WHERE 
+                    GETDATE() BETWEEN Start_date AND End_date
+            ) d
+            ON 
+                p.Id = d.Product_id
+            WHERE 
+                p.Name LIKE @query
+            ORDER BY ${orderByClause}
+            OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+        `);
+
+    // Create a new request for the count query
+    const countRequest = await getRequest(transaction);
+    const countResult = await countRequest
+        .input('query', sql.NVarChar, `%${query}%`)
+        .query(`SELECT COUNT(*) AS total FROM Products WHERE Name LIKE @query`);
+
+    return {
+        products: productsResult.recordset,
+        total: countResult.recordset[0].total,
+    };
 };
 
 const getProductById = async (productId, transaction) => {
@@ -342,7 +405,6 @@ const getProductById = async (productId, transaction) => {
 
 const updateProductStock = async ({ product_id, quantity, transaction }) => {
     const request = await getRequest(transaction);
-    console.log(product_id, quantity);
     await request
         .input('ProductId', sql.Int, product_id)
         .input('Quantity', sql.Int, quantity)
@@ -351,7 +413,6 @@ const updateProductStock = async ({ product_id, quantity, transaction }) => {
 };
 
 const updateProductSold = async ({ productId, quantity, transaction }) => {
-    console.log(productId, quantity);
     const request = await getRequest(transaction);
     await request
         .input('ProductId', sql.Int, productId)

@@ -7,7 +7,8 @@ const createSeller = async ({ name, userId, transaction = null }) => {
         await request
             .input('Name', sql.VarChar, name)
             .input('UserId', sql.Int, userId)
-            .query('INSERT INTO Sellers (Name, UserId) VALUES (@Name, @UserId)');
+            .input('created_at', sql.DateTime, new Date())
+            .query('INSERT INTO Sellers (Name, UserId, Created_At) VALUES (@Name, @UserId, @created_at)');
     } catch (err) {
         console.error('Error inserting seller', err);
         throw err;

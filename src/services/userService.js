@@ -13,8 +13,9 @@ const createUser = async ({ account, password, transaction = null }) => {
             .input('password', sql.VarChar, hashedPassword)
             .input('name', sql.VarChar, account)
             .input('avatar', sql.VarChar, 'default_avatar.jpg')
+            .input('created_at', sql.DateTime, new Date())
             .query(
-                'INSERT INTO Users (Account, Password, Name, Avatar) OUTPUT INSERTED.Id VALUES (@account, @password, @name, @avatar)',
+                'INSERT INTO Users (Account, Password, Name, Avatar, Created_At) OUTPUT INSERTED.Id VALUES (@account, @password, @name, @avatar, @created_at)',
             );
         const userId = userResult.recordset[0].Id;
         // Insert into Sellers table
@@ -22,7 +23,6 @@ const createUser = async ({ account, password, transaction = null }) => {
         return userId;
     } catch (err) {
         console.error('Error registering user', err);
-
         throw err;
     }
 };
