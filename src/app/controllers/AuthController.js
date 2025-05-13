@@ -12,12 +12,18 @@ class AuthController {
             const pool = await poolPromise;
             transaction = pool.transaction();
             await transaction.begin();
-
             const userId = await createUser({ account, password, transaction });
             await createSeller({ name: account, userId, transaction });
             await createUserCart({ userId, transaction });
+
+            const user = await getUserByAccount(account, transaction);
+            const seller = await getSellerByUserId({ userId: user.Id, transaction });
+            const cart = await getUserCart(user.Id, transaction);
+            const token = createToken(user, seller, cart);
+            console.log('Token created successfully', token);
+
             await transaction.commit();
-            res.status(201).send('User created');
+            res.send({ token });
         } catch (error) {
             await transaction.rollback();
             console.error('Error registering user', error);

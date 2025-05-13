@@ -30,7 +30,6 @@ const createNewProduct = async ({
     productDescription,
     productPrice,
     productStock,
-    productSKU,
     productBackGroundImage,
     productStatus,
     transaction = null,
@@ -44,10 +43,9 @@ const createNewProduct = async ({
         .input('Description', sql.NVarChar, productDescription)
         .input('Price', sql.Float, productPrice)
         .input('Stock', sql.Int, productStock)
-        .input('SKU', sql.NVarChar, productSKU)
         .input('Status', sql.NVarChar, productStatus)
         .query(
-            'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, SKU, Status) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @SKU, @Status)',
+            'INSERT INTO Products (SellerId,BackGround, Name, Slug,Description, Price, Stock, Status) OUTPUT INSERTED.Id VALUES (@SellerId, @BackGround, @Name, @Slug,@Description, @Price, @Stock, @Status)',
         );
     return result.recordset[0];
 };
@@ -60,7 +58,6 @@ const updateProduct = async ({
     productDescription,
     productPrice,
     productStock,
-    productSKU,
     updatedProductBackGroundImage,
     productStatus,
     transaction = null,
@@ -75,9 +72,8 @@ const updateProduct = async ({
         .input('Description', sql.NVarChar, productDescription)
         .input('Price', sql.Float, productPrice)
         .input('Stock', sql.Int, productStock)
-        .input('SKU', sql.NVarChar, productSKU)
         .query(
-            'UPDATE Products SET Name = @Name, Description = @Description, Price = @Price, Stock = @Stock, SKU = @SKU, BackGround = @BackGround WHERE Id = @ProductId',
+            'UPDATE Products SET Name = @Name, Description = @Description, Price = @Price, Stock = @Stock, BackGround = @BackGround WHERE Id = @ProductId',
         );
     return;
 };
@@ -141,7 +137,7 @@ const getLatestProducts = async ({ page = 1, limit = 10 }) => {
                 FROM 
                     Discount
                 WHERE 
-                    GETDATE() BETWEEN Start_date AND End_date
+                    GETUTCDATE() BETWEEN Start_date AND End_date
             ) d
             ON 
                 p.Id = d.Product_id
@@ -185,7 +181,7 @@ LEFT JOIN (
     FROM 
         Discount
     WHERE 
-        GETDATE() BETWEEN Start_date AND End_date
+        GETUTCDATE() BETWEEN Start_date AND End_date
 ) d
 ON 
     p.Id = d.Product_id
@@ -373,7 +369,7 @@ const getProductsBySearch = async ({ query, page = 1, limit = 5, sortBy = 'lates
                 FROM 
                     Discount
                 WHERE 
-                    GETDATE() BETWEEN Start_date AND End_date
+                    GETUTCDATE() BETWEEN Start_date AND End_date
             ) d
             ON 
                 p.Id = d.Product_id

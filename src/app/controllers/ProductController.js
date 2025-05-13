@@ -31,7 +31,7 @@ const { getSellerByUserId, getSellerById } = require('../../services/sellerServi
 const slugify = require('slugify');
 
 class ProductController {
-    //[Post] /products/add_product
+    //[Post] /products/seller/add_product
     async addProduct(req, res) {
         let transaction;
 
@@ -42,15 +42,7 @@ class ProductController {
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
 
-            const {
-                productName,
-                productDescription,
-                productPrice,
-                productStock,
-                productPriceRange,
-                productSKU,
-                productStatus,
-            } = req.body;
+            const { productName, productDescription, productPrice, productStock, productStatus } = req.body;
             // Tạo slug từ tên sản phẩm
             const baseSlug = await slugify(productName, { strict: true });
 
@@ -71,8 +63,7 @@ class ProductController {
                 productDescription,
                 productPrice,
                 productStock,
-                productPriceRange,
-                productSKU,
+
                 productBackGroundImage,
                 productStatus,
                 transaction,
@@ -87,16 +78,18 @@ class ProductController {
             }
 
             // Lưu từng mức giá vào bảng ProductPriceRanges
-            const priceRanges = JSON.parse(productPriceRange);
-            for (const priceRange of priceRanges) {
-                await insertProductPriceRanges({ productId, priceRange, transaction });
-            }
+            // const priceRanges = JSON.parse(productPriceRange);
+            // for (const priceRange of priceRanges) {
+            //     await insertProductPriceRanges({ productId, priceRange, transaction });
+            // }
 
             await transaction.commit();
 
             res.status(200).json({ message: 'Product added successfully' });
         } catch (error) {
-            transaction.rollback();
+            if (transaction) {
+                await transaction.rollback();
+            }
             console.error(error);
             res.status(500).json({ message: 'Server error' });
         }
@@ -119,7 +112,6 @@ class ProductController {
                 productDescription,
                 productPrice,
                 productStock,
-                productSKU,
                 productExistingBackGroundImage,
                 productExistingImages,
             } = req.body;
@@ -149,7 +141,6 @@ class ProductController {
                 productDescription,
                 productPrice,
                 productStock,
-                productSKU,
                 updatedProductBackGroundImage,
                 transaction,
             });

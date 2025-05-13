@@ -1,5 +1,5 @@
 const { sql, poolPromise } = require('../config/db/index');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { getRequest } = require('../utils/dbHelper');
 
 const createUser = async ({ account, password, transaction = null }) => {
@@ -27,10 +27,9 @@ const createUser = async ({ account, password, transaction = null }) => {
     }
 };
 
-const getUserByAccount = async (account) => {
+const getUserByAccount = async (account, transaction = null) => {
     try {
-        const pool = await poolPromise;
-        const request = pool.request();
+        const request = await getRequest(transaction);
         request.input('account', sql.VarChar, account);
         const result = await request.query('SELECT * FROM Users WHERE Account = @account');
         return result.recordset[0];
@@ -78,8 +77,8 @@ const updateProductQuantityInCart = async ({ cart_id, product_id, newQuantity })
         .query('UPDATE CartItems SET quantity = @quantity WHERE cart_id = @cart_id AND product_id = @product_id');
 };
 
-const getUserCart = async (userId) => {
-    const request = await getRequest();
+const getUserCart = async (userId, transaction = null) => {
+    const request = await getRequest(transaction);
     const result = await request.input('userId', sql.Int, userId).query('SELECT * FROM Carts WHERE user_id = @userId');
     return result.recordset[0];
 };

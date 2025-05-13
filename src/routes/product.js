@@ -4,7 +4,7 @@ const upload = require('../app/middlewares/UploadProductImg');
 const productController = require('../app/controllers/ProductController');
 
 router.post(
-    '/add_product',
+    '/seller/add_product',
 
     upload.fields([
         { name: 'productImages', maxCount: 9 }, // Tối đa 10 hình ảnh
