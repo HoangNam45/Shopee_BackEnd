@@ -11,11 +11,11 @@ app.use(express.json()); // Thêm dòng này để parse JSON bodies
 //Sử dụng biến môi trường
 
 // Connect backend to frontend
-const corsOptions = {
-    origin: 'http://localhost:3000',
-    optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//     origin: ['http://localhost:3000', 'https://shopee-front-end.vercel.app'],
+//     optionsSuccessStatus: 200,
+// };
+app.use(cors());
 route(app);
 // Cấu hình để phục vụ tệp tĩnh từ thư mục "uploads"
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));

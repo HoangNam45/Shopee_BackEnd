@@ -36,8 +36,11 @@ class SellerController {
         try {
             const user = req.user;
             const userId = user.id;
-
             const { shopName } = req.body;
+
+            // 1. Get old avatar filename before update
+            const sellerData = await getSellerByUserId({ userId });
+            const oldAvatar = sellerData.Avatar;
 
             let avatar = '';
             if (req.file) {
@@ -47,6 +50,16 @@ class SellerController {
             }
 
             const sellerNewInfo = await updateSellerInfo({ userId, shopName, avatar });
+
+            // 2. Delete old avatar file if changed and not empty
+            if (req.file && oldAvatar && oldAvatar !== avatar) {
+                const fs = require('fs');
+                const path = require('path');
+                const avatarPath = path.join(__dirname, '../../../src/uploads/images/sellerAvatar', oldAvatar);
+                fs.unlink(avatarPath, (err) => {
+                    if (err) console.error('Failed to delete old avatar:', err);
+                });
+            }
 
             res.status(200).json(sellerNewInfo);
         } catch (error) {

@@ -2,35 +2,33 @@ version: '3.8'
 
 services:
     backend:
-        image: node:16 # Sử dụng image Node.js
+        image: nhhnam/shopee-backend:latest # Dùng image từ Docker Hub
         container_name: shopee-backend
-        working_dir: /app
-        volumes:
-            - .:/app # Mount thư mục project vào container
         ports:
-            - 3000:3000 # Mở port 3000 cho backend
+            - 5000:5000 # Mở cổng 5000 cho backend
         environment:
             - DB_HOST=db
             - DB_PORT=1433
             - DB_USER=sa
-            - DB_PASSWORD=YourStrongP@ssword123 # Sửa mật khẩu cho đủ phức tạp
+            - DB_PASSWORD=YourStrongP@ssword123
             - DB_NAME=shopee
-        command: npm start # Chạy lệnh start backend
         depends_on:
-            - db # Đảm bảo backend đợi db sẵn sàng trước
+            - db
+        restart: always # Tự khởi động lại nếu container bị crash
 
     db:
         image: mcr.microsoft.com/mssql/server:2019-latest
         container_name: sql-server
         environment:
             - ACCEPT_EULA=Y
-            - SA_PASSWORD=YourStrongP@ssword123 # Sửa mật khẩu cho đủ phức tạp
+            - SA_PASSWORD=YourStrongP@ssword123
             - MSSQL_PID=Express
         ports:
-            - 1433:1433 # Mở port 1433 cho SQL Server
+            - 1433:1433
         volumes:
-            - sqlserver-data:/var/opt/mssql # Mount volume để lưu dữ liệu database
+            - sqlserver-data:/var/opt/mssql
+        restart: always # Đảm bảo DB cũng tự khởi động lại
 
 volumes:
     sqlserver-data:
-        driver: local # Volume lưu trữ dữ liệu SQL Server
+        driver: local

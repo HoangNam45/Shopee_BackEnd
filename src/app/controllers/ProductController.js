@@ -24,6 +24,8 @@ const {
     updateProductSold,
     updateProductStock,
     getTotalProducts,
+    getProductImagesByProductId,
+    getProductBackGroundImageByProductId,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -98,12 +100,13 @@ class ProductController {
     //[Put] /products/update_product/:productId
     async updateProduct(req, res) {
         let transaction;
-
+        // 1. Get old images before update
+        const { productId } = req.params;
+        let oldProductImages = [];
+        let oldBackGroundImage = '';
         try {
             const user = req.user;
             const userId = user.id;
-
-            const productId = req.params.productId;
 
             const productImages = req.files['productImages'] || [];
             const productBackGroundImage = req.files['productBackGroundImage'] || [];
@@ -116,6 +119,10 @@ class ProductController {
                 productExistingImages,
             } = req.body;
             const baseSlug = await slugify(productName, { strict: true });
+
+            // Get old images from DB before update
+            oldProductImages = await getProductImagesByProductId(productId); // returns array of filenames
+            oldBackGroundImage = await getProductBackGroundImageByProductId(productId); // returns filename string
 
             const pool = await poolPromise;
             transaction = pool.transaction();
@@ -145,7 +152,7 @@ class ProductController {
                 transaction,
             });
 
-            // To update product images table, delete all existing images and insert new images!!!!!!!
+            // To update product images table, delete all existing images and insert new images
             let updatedProdudctImages;
             const existingImagesArray = Array.isArray(productExistingImages)
                 ? productExistingImages
@@ -166,9 +173,39 @@ class ProductController {
             }
             await transaction.commit();
 
-            res.status(200).json({ message: 'Product added successfully' });
+            // === DELETE OLD IMAGES FROM SERVER ===
+            const fs = require('fs');
+            const path = require('path');
+
+            // 1. Delete old background image if replaced
+            if (
+                oldBackGroundImage &&
+                updatedProductBackGroundImage &&
+                oldBackGroundImage !== updatedProductBackGroundImage
+            ) {
+                const bgPath = path.join(
+                    __dirname,
+                    '../../../src/uploads/images/productBackGroundImage',
+                    oldBackGroundImage,
+                );
+                fs.unlink(bgPath, (err) => {
+                    if (err) console.error('Failed to delete old background image:', err);
+                });
+            }
+
+            // 2. Delete old product images that are not in updatedProdudctImages
+            const imagesToDelete = oldProductImages.filter((img) => !updatedProdudctImages.includes(img));
+            const imagesDir = path.join(__dirname, '../../../src/uploads/images/productImages');
+            for (const img of imagesToDelete) {
+                const filePath = path.join(imagesDir, img);
+                fs.unlink(filePath, (err) => {
+                    if (err) console.error('Failed to delete old product image:', err);
+                });
+            }
+
+            res.status(200).json({ message: 'Product updated successfully' });
         } catch (error) {
-            transaction.rollback();
+            if (transaction) await transaction.rollback();
             console.error(error);
             res.status(500).json({ message: 'Server error' });
         }

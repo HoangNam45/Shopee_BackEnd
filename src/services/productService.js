@@ -436,6 +436,25 @@ const getTotalProducts = async () => {
     return result.recordset[0].TotalProducts;
 };
 
+const getProductImagesByProductId = async (productId, transaction = null) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .query('SELECT ImageUrl FROM ProductImages WHERE ProductId = @ProductId');
+    // Return array of filenames
+    return result.recordset.map((row) => row.ImageUrl);
+};
+
+// Get the background image filename for a product
+const getProductBackGroundImageByProductId = async (productId, transaction = null) => {
+    const request = await getRequest(transaction);
+    const result = await request
+        .input('ProductId', sql.Int, productId)
+        .query('SELECT BackGround FROM Products WHERE Id = @ProductId');
+    // Return filename string or null
+    return result.recordset[0]?.BackGround || null;
+};
+
 module.exports = {
     createProductUniqueSlug,
     createNewProduct,
@@ -460,4 +479,6 @@ module.exports = {
     updateProductSold,
     updateProductStockAfterOrder,
     getTotalProducts,
+    getProductImagesByProductId,
+    getProductBackGroundImageByProductId,
 };

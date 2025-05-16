@@ -248,13 +248,27 @@ class UserController {
             const user = req.user;
             const { Name } = req.body;
             let { Avatar } = req.body;
+
+            // 1. Get old avatar filename before update
+            const userInfo = await getUserInfo(user.id);
+            const oldAvatar = userInfo.Avatar;
+
             if (req.file) {
-                Avatar = req.file ? req.file.filename : null;
+                Avatar = req.file.filename;
             }
 
-            console.log('avatar', Avatar);
-            console.log('name', Name);
             await updateUserInfo({ userId: user.id, Name, Avatar });
+
+            // 2. Delete old avatar file if changed and not empty
+            if (req.file && oldAvatar && oldAvatar !== Avatar) {
+                const fs = require('fs');
+                const path = require('path');
+                const avatarPath = path.join(__dirname, '../../../src/uploads/images/userAvatar', oldAvatar);
+                fs.unlink(avatarPath, (err) => {
+                    if (err) console.error('Failed to delete old user avatar:', err);
+                });
+            }
+
             res.status(200).json({ message: 'User information updated', Avatar });
         } catch (error) {
             console.error('Error updating user information', error);
