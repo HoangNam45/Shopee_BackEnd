@@ -260,7 +260,7 @@ class UserController {
             await updateUserInfo({ userId: user.id, Name, Avatar });
 
             // 2. Delete old avatar file if changed and not empty
-            if (req.file && oldAvatar && oldAvatar !== Avatar) {
+            if (req.file && oldAvatar && oldAvatar !== Avatar && oldAvatar !== 'default_avatar.jpg') {
                 const fs = require('fs');
                 const path = require('path');
                 const avatarPath = path.join(__dirname, '../../../src/uploads/images/userAvatar', oldAvatar);

@@ -52,7 +52,7 @@ class SellerController {
             const sellerNewInfo = await updateSellerInfo({ userId, shopName, avatar });
 
             // 2. Delete old avatar file if changed and not empty
-            if (req.file && oldAvatar && oldAvatar !== avatar) {
+            if (req.file && oldAvatar && oldAvatar !== avatar && oldAvatar !== 'default_avatar.jpg') {
                 const fs = require('fs');
                 const path = require('path');
                 const avatarPath = path.join(__dirname, '../../../src/uploads/images/sellerAvatar', oldAvatar);

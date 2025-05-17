@@ -22,6 +22,7 @@ module.exports = {
     sql,
     poolPromise,
 };
+
 // const sql = require('mssql'); // Đây là mssql, không cần cài thêm gì nếu bạn đã cài mssql trong dự án
 // const config = {
 //     server: 'db', // 'db' là tên dịch vụ SQL Server trong docker-compose
