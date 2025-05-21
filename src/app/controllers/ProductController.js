@@ -26,6 +26,10 @@ const {
     getTotalProducts,
     getProductImagesByProductId,
     getProductBackGroundImageByProductId,
+    deleteCartItemsByProductId,
+    deleteDiscountsByProductId,
+    deleteOrderItemsByProductId,
+    deleteOrdersWithoutItems,
 } = require('../../services/productService');
 
 const { getSellerByUserId, getSellerById } = require('../../services/sellerService');
@@ -224,9 +228,56 @@ class ProductController {
     }
     //[DELETE] /products/delete_product/:productId
     async deleteProduct(req, res) {
+        let transaction;
         try {
             const { productId } = req.params;
+
+            // 1. Get all image filenames before deleting from DB
+            const oldProductImages = await getProductImagesByProductId(productId);
+            const oldBackGroundImage = await getProductBackGroundImageByProductId(productId);
+
+            await deleteCartItemsByProductId(productId);
+
+            await deleteDiscountsByProductId(productId);
+
+            await deleteOrderItemsByProductId(productId);
+
+            // 5. Delete Orders that have no items left
+            await deleteOrdersWithoutItems();
+
+            // 2. Delete images from DB
+            await deleteProductImagesById({ productId });
+
+            // 3. Delete product from DB
             await deleteProductById(productId);
+
+            // 4. Delete files from server
+            const fs = require('fs');
+            const path = require('path');
+
+            // Delete background image if not default and exists
+            if (oldBackGroundImage && oldBackGroundImage !== 'default_avatar.jpg') {
+                const bgPath = path.join(
+                    __dirname,
+                    '../../../src/uploads/images/productBackGroundImage',
+                    oldBackGroundImage,
+                );
+                fs.unlink(bgPath, (err) => {
+                    if (err) console.error('Failed to delete background image:', err);
+                });
+            }
+
+            // Delete product images
+            const imagesDir = path.join(__dirname, '../../../src/uploads/images/productImages');
+            for (const img of oldProductImages) {
+                if (img && img !== 'default_avatar.jpg') {
+                    const filePath = path.join(imagesDir, img);
+                    fs.unlink(filePath, (err) => {
+                        if (err) console.error('Failed to delete product image:', err);
+                    });
+                }
+            }
+
             res.status(200).json({ message: 'Product deleted successfully' });
         } catch (error) {
             console.error(error);

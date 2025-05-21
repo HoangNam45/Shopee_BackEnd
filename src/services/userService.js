@@ -112,7 +112,7 @@ LEFT JOIN (
     FROM 
         Discount
     WHERE 
-        GETDATE() BETWEEN Start_date AND End_date
+        GETUTCDATE() BETWEEN Start_date AND End_date
 )  d
 ON 
     p.Id = d.Product_id
@@ -258,7 +258,7 @@ const getUserInfo = async (userId) => {
     const request = await getRequest();
     const result = await request
         .input('userId', sql.Int, userId)
-        .query('SELECT Name, Avatar FROM Users WHERE Id = @userId');
+        .query('SELECT Name, Avatar, Account FROM Users WHERE Id = @userId');
     return result.recordset[0];
 };
 

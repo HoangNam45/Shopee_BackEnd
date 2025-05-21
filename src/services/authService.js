@@ -6,7 +6,7 @@ const createToken = (user, seller, cart) => {
     try {
         console.log(user, seller, cart);
         const payload = { id: user.Id, seller_id: seller.Id, cart_id: cart.id };
-        return jwt.sign(payload, SECRET_KEY, { expiresIn: '2d' });
+        return jwt.sign(payload, SECRET_KEY, { expiresIn: '3d' });
     } catch (error) {
         console.error('Error creating token', error);
         throw new Error('Token creation failed');

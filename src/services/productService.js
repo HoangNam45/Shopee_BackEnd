@@ -141,6 +141,8 @@ const getLatestProducts = async ({ page = 1, limit = 10 }) => {
             ) d
             ON 
                 p.Id = d.Product_id
+            WHERE 
+                p.Status = 'active'    
             ORDER BY 
                 p.CreatedAt DESC
             OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
@@ -271,6 +273,12 @@ const deleteProductById = async (productId, transaction) => {
     return;
 };
 
+const deleteCartItemsByProductId = async (productId, transaction = null) => {
+    const request = await getRequest(transaction);
+    await request.input('ProductId', sql.Int, productId).query('DELETE FROM CartItems WHERE product_id = @ProductId');
+    return;
+};
+
 const getSellerDetailProduct = async ({ sellerId, productId, transaction }) => {
     const request = await getRequest(transaction);
 
@@ -295,6 +303,11 @@ const deleteProductImagesById = async ({ productId, transaction }) => {
         .input('ProductId', sql.Int, productId)
         .query('DELETE FROM ProductImages WHERE ProductId = @ProductId');
     return;
+};
+
+const deleteDiscountsByProductId = async (productId, transaction = null) => {
+    const request = await getRequest(transaction);
+    await request.input('ProductId', sql.Int, productId).query('DELETE FROM Discount WHERE Product_id = @ProductId');
 };
 
 // const getProductsBySearch = async ({ query, transaction }) => {
@@ -375,6 +388,7 @@ const getProductsBySearch = async ({ query, page = 1, limit = 5, sortBy = 'lates
                 p.Id = d.Product_id
             WHERE 
                 p.Name LIKE @query
+                AND p.Status = 'active'
             ORDER BY ${orderByClause}
             OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
         `);
@@ -383,7 +397,7 @@ const getProductsBySearch = async ({ query, page = 1, limit = 5, sortBy = 'lates
     const countRequest = await getRequest(transaction);
     const countResult = await countRequest
         .input('query', sql.NVarChar, `%${query}%`)
-        .query(`SELECT COUNT(*) AS total FROM Products WHERE Name LIKE @query`);
+        .query(`SELECT COUNT(*) AS total FROM Products WHERE Name LIKE @query AND Status = 'active'`);
 
     return {
         products: productsResult.recordset,
@@ -432,6 +446,7 @@ const getTotalProducts = async () => {
     const result = await request.query(`
         SELECT COUNT(*) AS TotalProducts
         FROM Products
+        WHERE Status = 'active'
     `);
     return result.recordset[0].TotalProducts;
 };
@@ -453,6 +468,20 @@ const getProductBackGroundImageByProductId = async (productId, transaction = nul
         .query('SELECT BackGround FROM Products WHERE Id = @ProductId');
     // Return filename string or null
     return result.recordset[0]?.BackGround || null;
+};
+
+const deleteOrderItemsByProductId = async (productId, transaction = null) => {
+    const request = await getRequest(transaction);
+    await request.input('ProductId', sql.Int, productId).query('DELETE FROM Order_Items WHERE product_id = @ProductId');
+};
+
+const deleteOrdersWithoutItems = async (transaction = null) => {
+    const request = await getRequest(transaction);
+    // Delete orders that have no items left
+    await request.query(`
+        DELETE FROM Orders
+        WHERE order_id NOT IN (SELECT DISTINCT order_id FROM Order_Items)
+    `);
 };
 
 module.exports = {
@@ -481,4 +510,8 @@ module.exports = {
     getTotalProducts,
     getProductImagesByProductId,
     getProductBackGroundImageByProductId,
+    deleteCartItemsByProductId,
+    deleteDiscountsByProductId,
+    deleteOrderItemsByProductId,
+    deleteOrdersWithoutItems,
 };
