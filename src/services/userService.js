@@ -232,7 +232,7 @@ const getUserFailDeliveryOrders = async (userId) => {
             ON oi.product_id= p.Id
             JOIN Sellers s
             ON s.Id=p.SellerId
-            WHERE user_id = @userId AND o.status = 'Fail Delivery'
+            WHERE user_id = @userId AND o.status = 'Failed Delivery'
             ORDER BY o.created_at DESC
 `);
     return result.recordset;

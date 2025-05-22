@@ -108,52 +108,63 @@ class UserController {
         try {
             const user = req.user;
             const cart_id = user.cart_id;
-            const { name, phoneNumber, address, totalPrice, checkedProducts } = req.body;
+            const { name, phoneNumber, address, checkedProducts } = req.body;
             const pool = await poolPromise;
             transaction = pool.transaction();
-
             await transaction.begin();
-            // Create order
-            const order_id = await createOrder({
-                user_id: user.id,
-                name,
-                phoneNumber,
-                address,
-                total_price: totalPrice,
-                transaction,
-            });
 
-            console.log('order_id', order_id);
-            console.log('checkedProducts', checkedProducts);
-            // Create order detail
+            // 1. Group products by sellerId
+            const productsBySeller = {};
             for (const product of checkedProducts) {
-                await createOrderDetail({
-                    order_id,
-                    product_id: product.Id,
-                    quantity: product.quantity,
-                    price: product.Final_price * product.quantity,
-                    transaction,
-                });
-            }
-            // Update product stock
-            for (const product of checkedProducts) {
-                await updateProductStock({
-                    product_id: product.Id,
-                    quantity: product.quantity,
-                    transaction,
-                });
-            }
-            // Delete cart items
-            for (const product of checkedProducts) {
-                await deleteUserCartItem({ cart_id, product_id: product.Id, transaction });
+                if (!productsBySeller[product.SellerId]) {
+                    productsBySeller[product.SellerId] = [];
+                }
+                productsBySeller[product.SellerId].push(product);
             }
 
-            // Send notification to seller
+            // 2. Create an order for each seller
+            const orderIds = [];
+            for (const sellerId in productsBySeller) {
+                const sellerProducts = productsBySeller[sellerId];
+                // Calculate total price for this seller's order
+                const totalPrice = sellerProducts.reduce((sum, p) => sum + p.Final_price * p.quantity, 0);
+                // Create order for this seller
+                const order_id = await createOrder({
+                    user_id: user.id,
+                    name,
+                    phoneNumber,
+                    address,
+                    total_price: totalPrice,
+                    transaction,
+                });
+                orderIds.push(order_id);
+
+                // Create order details for each product
+                for (const product of sellerProducts) {
+                    await createOrderDetail({
+                        order_id,
+                        product_id: product.Id,
+                        quantity: product.quantity,
+                        price: product.Final_price * product.quantity,
+                        transaction,
+                    });
+
+                    // Update product stock
+                    await updateProductStock({
+                        product_id: product.Id,
+                        quantity: product.quantity,
+                        transaction,
+                    });
+
+                    // Remove from cart
+                    await deleteUserCartItem({ cart_id, product_id: product.Id, transaction });
+                }
+            }
+
             await transaction.commit();
-
-            res.status(200).json({ message: 'Order created' });
+            res.status(200).json({ message: 'Order(s) created', orderIds });
         } catch (error) {
-            await transaction.rollback();
+            if (transaction) await transaction.rollback();
             console.error('Error creating order', error);
             res.status(500).json({ message: 'Server error' });
         }
